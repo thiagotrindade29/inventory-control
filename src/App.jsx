@@ -1,13 +1,253 @@
+import { useCallback, useEffect, useState } from 'react'
 import './App.css'
+import CategoriesView from './components/CategoriesView.jsx'
+import DashboardView from './components/DashboardView.jsx'
+import MovementModal from './components/MovementModal.jsx'
+import MovementsView from './components/MovementsView.jsx'
+import ProductModal from './components/ProductModal.jsx'
+import ProductsView from './components/ProductsView.jsx'
+import Sidebar from './components/Sidebar.jsx'
+import { api } from './services/api.js'
 
 function App() {
+  const [activeTab, setActiveTab] = useState('dashboard')
+  const [apiOnline, setApiOnline] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [toast, setToast] = useState(null)
 
+  const [dashboard, setDashboard] = useState(null)
+  const [categories, setCategories] = useState([])
+  const [products, setProducts] = useState([])
+  const [allProducts, setAllProducts] = useState([])
+  const [movements, setMovements] = useState([])
+
+  const [filters, setFilters] = useState({
+    search: '',
+    categoryId: '',
+    lowStock: false,
+  })
+
+  const [productModal, setProductModal] = useState({ open: false, product: null })
+  const [movementModal, setMovementModal] = useState({
+    open: false,
+    product: null,
+    type: 'IN',
+  })
+
+  const showToast = useCallback((message, variant = 'success') => {
+    setToast({ message, variant })
+    setTimeout(() => {
+      setToast((current) => (current?.message === message ? null : current))
+    }, 3500)
+  }, [])
+
+  const loadCoreData = useCallback(async (currentFilters) => {
+    try {
+      await api.getHealth()
+      setApiOnline(true)
+
+      const [dashData, catData, filteredProducts, catalogProducts, movData] = await Promise.all([
+        api.getDashboard(),
+        api.getCategories(),
+        api.getProducts(currentFilters),
+        api.getProducts(),
+        api.getMovements(100),
+      ])
+
+      setDashboard(dashData)
+      setCategories(catData)
+      setProducts(filteredProducts)
+      setAllProducts(catalogProducts)
+      setMovements(movData)
+    } catch {
+      setApiOnline(false)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadCoreData(filters)
+  }, [loadCoreData, filters])
+
+  function handleNavigate(tab, options = {}) {
+    setActiveTab(tab)
+    if (tab === 'products' && options.onlyLowStock) {
+      setFilters((prev) => ({ ...prev, lowStock: true }))
+    }
+  }
+
+  async function handleSaveProduct(payload) {
+    if (productModal.product) {
+      await api.updateProduct(productModal.product.id, payload)
+      showToast(`Produto "${payload.name}" atualizado!`)
+    } else {
+      await api.createProduct(payload)
+      showToast(`Produto "${payload.name}" cadastrado!`)
+    }
+    setProductModal({ open: false, product: null })
+    await loadCoreData(filters)
+  }
+
+  async function handleDeleteProduct(product) {
+    const confirmed = window.confirm(
+      `Deseja excluir "${product.name}"? O histórico de movimentações dele também será removido.`
+    )
+    if (!confirmed) return
+
+    try {
+      await api.deleteProduct(product.id)
+      showToast(`Produto "${product.name}" removido.`)
+      await loadCoreData(filters)
+    } catch (err) {
+      showToast(err.message, 'error')
+    }
+  }
+
+  async function handleSaveMovement(payload) {
+    await api.createMovement(payload)
+    showToast(
+      payload.type === 'IN'
+        ? 'Entrada registrada no estoque!'
+        : 'Saída registrada no estoque!'
+    )
+    setMovementModal({ open: false, product: null, type: 'IN' })
+    await loadCoreData(filters)
+  }
+
+  async function handleCreateCategory(payload) {
+    await api.createCategory(payload)
+    showToast(`Categoria "${payload.name}" criada!`)
+    await loadCoreData(filters)
+  }
+
+  async function handleUpdateCategory(id, payload) {
+    await api.updateCategory(id, payload)
+    showToast(`Categoria "${payload.name}" atualizada!`)
+    await loadCoreData(filters)
+  }
+
+  async function handleDeleteCategory(category) {
+    const confirmed = window.confirm(
+      `Excluir a categoria "${category.name}"? Os produtos vinculados ficarão sem categoria.`
+    )
+    if (!confirmed) return
+
+    try {
+      await api.deleteCategory(category.id)
+      showToast(`Categoria "${category.name}" removida.`)
+      await loadCoreData(filters)
+    } catch (err) {
+      showToast(err.message, 'error')
+    }
+  }
 
   return (
-    <>
-      <h1>Inventory Control</h1>
-      <p>Projeto pessoal de controle de inventário da minha casa.</p>
-    </>
+    <div className="erp-shell">
+      <Sidebar
+        activeTab={activeTab}
+        onSelectTab={setActiveTab}
+        apiOnline={apiOnline}
+        lowStockCount={dashboard?.summary?.low_stock_count || 0}
+      />
+
+      <main className="erp-main">
+        {!apiOnline && !loading && (
+          <div className="connection-banner">
+            <div>
+              <strong>Backend não encontrado em http://localhost:3001</strong>
+              <p>
+                Abra um terminal na pasta <code>server/</code> e rode <code>npm.cmd run dev</code>{' '}
+                para conectar ao PostgreSQL.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="btn btn-sm btn-secondary"
+              onClick={() => loadCoreData(filters)}
+            >
+              Tentar novamente
+            </button>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="loading-state">Carregando dados do PostgreSQL...</div>
+        ) : (
+          <>
+            {activeTab === 'dashboard' && (
+              <DashboardView
+                dashboard={dashboard}
+                onNavigate={handleNavigate}
+                onOpenNewProduct={() => setProductModal({ open: true, product: null })}
+                onQuickMovement={(product, type) =>
+                  setMovementModal({ open: true, product, type })
+                }
+              />
+            )}
+
+            {activeTab === 'products' && (
+              <ProductsView
+                products={products}
+                categories={categories}
+                filters={filters}
+                onFilterChange={setFilters}
+                onOpenNewProduct={() => setProductModal({ open: true, product: null })}
+                onEditProduct={(product) => setProductModal({ open: true, product })}
+                onDeleteProduct={handleDeleteProduct}
+                onQuickMovement={(product, type) =>
+                  setMovementModal({ open: true, product, type })
+                }
+              />
+            )}
+
+            {activeTab === 'movements' && (
+              <MovementsView
+                movements={movements}
+                hasProducts={allProducts.length > 0}
+                onOpenNewMovement={() =>
+                  setMovementModal({ open: true, product: null, type: 'IN' })
+                }
+              />
+            )}
+
+            {activeTab === 'categories' && (
+              <CategoriesView
+                categories={categories}
+                onCreate={handleCreateCategory}
+                onUpdate={handleUpdateCategory}
+                onDelete={handleDeleteCategory}
+              />
+            )}
+          </>
+        )}
+      </main>
+
+      {productModal.open && (
+        <ProductModal
+          product={productModal.product}
+          categories={categories}
+          onClose={() => setProductModal({ open: false, product: null })}
+          onSave={handleSaveProduct}
+        />
+      )}
+
+      {movementModal.open && (
+        <MovementModal
+          products={allProducts}
+          initialProduct={movementModal.product}
+          initialType={movementModal.type}
+          onClose={() => setMovementModal({ open: false, product: null, type: 'IN' })}
+          onSave={handleSaveMovement}
+        />
+      )}
+
+      {toast && (
+        <div className={`toast ${toast.variant === 'error' ? 'toast-error' : 'toast-success'}`}>
+          {toast.message}
+        </div>
+      )}
+    </div>
   )
 }
 
