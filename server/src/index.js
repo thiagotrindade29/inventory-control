@@ -10,8 +10,10 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') })
 import { pool } from './db.js'
 import categoriesRouter from './routes/categories.js'
 import dashboardRouter from './routes/dashboard.js'
+import financialRouter from './routes/financial.js'
 import movementsRouter from './routes/movements.js'
 import productsRouter from './routes/products.js'
+import purchasesRouter from './routes/purchases.js'
 
 const app = express()
 const port = Number(process.env.PORT || 3001)
@@ -33,6 +35,8 @@ app.use('/api/dashboard', dashboardRouter)
 app.use('/api/categories', categoriesRouter)
 app.use('/api/products', productsRouter)
 app.use('/api/movements', movementsRouter)
+app.use('/api/purchases', purchasesRouter)
+app.use('/api/financial', financialRouter)
 
 // Middleware global de tratamento de erros
 app.use((err, _req, res, _next) => {

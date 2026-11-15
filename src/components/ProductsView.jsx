@@ -89,7 +89,13 @@ export default function ProductsView({
                       <td>
                         <div className="product-cell">
                           <strong>{product.name}</strong>
-                          <small>{product.sku ? `SKU: ${product.sku}` : 'Sem SKU'}</small>
+                          <small>
+                            {product.barcode
+                              ? `EAN: ${product.barcode}`
+                              : product.sku
+                              ? `SKU: ${product.sku}`
+                              : 'Sem código'}
+                          </small>
                         </div>
                       </td>
                       <td>
@@ -118,6 +124,12 @@ export default function ProductsView({
                       </td>
                       <td>
                         {formatCurrency(product.unit_price)}
+                        {Number(product.previous_unit_price || 0) > 0 &&
+                          Number(product.previous_unit_price) !== Number(product.unit_price) && (
+                            <small className="block-sub text-muted">
+                              Ant: {formatCurrency(product.previous_unit_price)}
+                            </small>
+                          )}
                         <small className="block-sub">
                           Total: {formatCurrency(product.quantity * product.unit_price)}
                         </small>

@@ -12,7 +12,7 @@ router.get('/', async (req, res, next) => {
 
     if (search && search.trim()) {
       params.push(`%${search.trim()}%`)
-      conditions.push(`(p.name ILIKE $${params.length} OR p.sku ILIKE $${params.length} OR p.location ILIKE $${params.length})`)
+      conditions.push(`(p.name ILIKE $${params.length} OR p.sku ILIKE $${params.length} OR p.barcode ILIKE $${params.length} OR p.location ILIKE $${params.length})`)
     }
 
     if (categoryId) {
@@ -75,6 +75,7 @@ router.post('/', async (req, res, next) => {
   try {
     const {
       sku = null,
+      barcode = null,
       name,
       category_id = null,
       location = 'Despensa',
@@ -82,6 +83,7 @@ router.post('/', async (req, res, next) => {
       quantity = 0,
       min_quantity = 1,
       unit_price = 0,
+      previous_unit_price = 0,
       expiration_date = null,
       notes = null,
     } = req.body
@@ -108,12 +110,13 @@ router.post('/', async (req, res, next) => {
 
     const { rows } = await client.query(
       `INSERT INTO products (
-         sku, name, category_id, location, unit, quantity, min_quantity, unit_price, expiration_date, notes
+         sku, barcode, name, category_id, location, unit, quantity, min_quantity, unit_price, previous_unit_price, expiration_date, notes
        )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING *`,
       [
         sku?.trim() || null,
+        barcode?.trim() || sku?.trim() || null,
         name.trim(),
         category_id ? Number(category_id) : null,
         location?.trim() || 'Despensa',
@@ -121,6 +124,7 @@ router.post('/', async (req, res, next) => {
         qty,
         minQty,
         price,
+        Number(previous_unit_price) || 0,
         expiration_date || null,
         notes?.trim() || null,
       ]
@@ -156,6 +160,7 @@ router.put('/:id', async (req, res, next) => {
     const { id } = req.params
     const {
       sku = null,
+      barcode = null,
       name,
       category_id = null,
       location = 'Despensa',
@@ -163,6 +168,7 @@ router.put('/:id', async (req, res, next) => {
       quantity = 0,
       min_quantity = 1,
       unit_price = 0,
+      previous_unit_price = null,
       expiration_date = null,
       notes = null,
     } = req.body
@@ -192,19 +198,22 @@ router.put('/:id', async (req, res, next) => {
     const { rows } = await client.query(
       `UPDATE products
        SET sku = $1,
-           name = $2,
-           category_id = $3,
-           location = $4,
-           unit = $5,
-           quantity = $6,
-           min_quantity = $7,
-           unit_price = $8,
-           expiration_date = $9,
-           notes = $10
-       WHERE id = $11
+           barcode = $2,
+           name = $3,
+           category_id = $4,
+           location = $5,
+           unit = $6,
+           quantity = $7,
+           min_quantity = $8,
+           unit_price = $9,
+           previous_unit_price = COALESCE($10, previous_unit_price),
+           expiration_date = $11,
+           notes = $12
+       WHERE id = $13
        RETURNING *`,
       [
         sku?.trim() || null,
+        barcode?.trim() || sku?.trim() || null,
         name.trim(),
         category_id ? Number(category_id) : null,
         location?.trim() || 'Despensa',
@@ -212,6 +221,7 @@ router.put('/:id', async (req, res, next) => {
         newQty,
         minQty,
         price,
+        previous_unit_price !== null && previous_unit_price !== undefined ? Number(previous_unit_price) : null,
         expiration_date || null,
         notes?.trim() || null,
         id,

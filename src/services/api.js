@@ -51,4 +51,11 @@ export const api = {
   getMovements: (limit = 100) => request(`/movements?limit=${limit}`),
   createMovement: (payload) =>
     request('/movements', { method: 'POST', body: JSON.stringify(payload) }),
+
+  getPurchases: () => request('/purchases'),
+  getPurchase: (id) => request(`/purchases/${id}`),
+  createPurchase: (payload) =>
+    request('/purchases', { method: 'POST', body: JSON.stringify(payload) }),
+
+  getFinancial: () => request('/financial'),
 }
