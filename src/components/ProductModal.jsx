@@ -6,6 +6,7 @@ export default function ProductModal({ product, categories, onClose, onSave }) {
 
   const [form, setForm] = useState({
     sku: product?.sku || '',
+    barcode: product?.barcode || '',
     name: product?.name || '',
     category_id: product?.category_id ? String(product.category_id) : '',
     location: product?.location || 'Despensa',
@@ -13,6 +14,7 @@ export default function ProductModal({ product, categories, onClose, onSave }) {
     quantity: product ? String(product.quantity) : '1',
     min_quantity: product ? String(product.min_quantity) : '1',
     unit_price: product ? String(product.unit_price) : '0',
+    previous_unit_price: product ? String(product.previous_unit_price || 0) : '0',
     expiration_date: toDateInputValue(product?.expiration_date),
     notes: product?.notes || '',
   })
@@ -37,6 +39,7 @@ export default function ProductModal({ product, categories, onClose, onSave }) {
     try {
       await onSave({
         sku: form.sku.trim() || null,
+        barcode: form.barcode.trim() || form.sku.trim() || null,
         name: form.name.trim(),
         category_id: form.category_id ? Number(form.category_id) : null,
         location: form.location.trim() || 'Despensa',
@@ -44,6 +47,7 @@ export default function ProductModal({ product, categories, onClose, onSave }) {
         quantity: Number(form.quantity || 0),
         min_quantity: Number(form.min_quantity || 0),
         unit_price: Number(form.unit_price || 0),
+        previous_unit_price: Number(form.previous_unit_price || 0),
         expiration_date: form.expiration_date || null,
         notes: form.notes.trim() || null,
       })
@@ -88,13 +92,24 @@ export default function ProductModal({ product, categories, onClose, onSave }) {
             </label>
 
             <label className="field">
-              <span>Código SKU (opcional)</span>
+              <span>Código SKU</span>
               <input
                 type="text"
                 className="input"
                 placeholder="Ex: ALI-003"
                 value={form.sku}
                 onChange={(e) => handleChange('sku', e.target.value)}
+              />
+            </label>
+
+            <label className="field">
+              <span>Código de Barras (EAN / Mercado)</span>
+              <input
+                type="text"
+                className="input"
+                placeholder="Ex: 7891000250787"
+                value={form.barcode}
+                onChange={(e) => handleChange('barcode', e.target.value)}
               />
             </label>
 
@@ -170,7 +185,7 @@ export default function ProductModal({ product, categories, onClose, onSave }) {
             </label>
 
             <label className="field">
-              <span>Preço Unitário (R$)</span>
+              <span>Preço Unitário Atual (R$)</span>
               <input
                 type="number"
                 step="0.01"
@@ -178,6 +193,19 @@ export default function ProductModal({ product, categories, onClose, onSave }) {
                 className="input"
                 value={form.unit_price}
                 onChange={(e) => handleChange('unit_price', e.target.value)}
+              />
+            </label>
+
+            <label className="field">
+              <span>Preço Mês Anterior / Referência (R$)</span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                className="input"
+                placeholder="Para cálculo de inflação"
+                value={form.previous_unit_price}
+                onChange={(e) => handleChange('previous_unit_price', e.target.value)}
               />
             </label>
 

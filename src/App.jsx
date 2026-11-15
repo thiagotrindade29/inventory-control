@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import './App.css'
 import CategoriesView from './components/CategoriesView.jsx'
 import DashboardView from './components/DashboardView.jsx'
+import FinancialView from './components/FinancialView.jsx'
+import MarketModeView from './components/MarketModeView.jsx'
 import MovementModal from './components/MovementModal.jsx'
 import MovementsView from './components/MovementsView.jsx'
 import ProductModal from './components/ProductModal.jsx'
@@ -20,6 +22,7 @@ function App() {
   const [products, setProducts] = useState([])
   const [allProducts, setAllProducts] = useState([])
   const [movements, setMovements] = useState([])
+  const [financialData, setFinancialData] = useState(null)
 
   const [filters, setFilters] = useState({
     search: '',
@@ -46,19 +49,22 @@ function App() {
       await api.getHealth()
       setApiOnline(true)
 
-      const [dashData, catData, filteredProducts, catalogProducts, movData] = await Promise.all([
-        api.getDashboard(),
-        api.getCategories(),
-        api.getProducts(currentFilters),
-        api.getProducts(),
-        api.getMovements(100),
-      ])
+      const [dashData, catData, filteredProducts, catalogProducts, movData, finData] =
+        await Promise.all([
+          api.getDashboard(),
+          api.getCategories(),
+          api.getProducts(currentFilters),
+          api.getProducts(),
+          api.getMovements(100),
+          api.getFinancial().catch(() => null),
+        ])
 
       setDashboard(dashData)
       setCategories(catData)
       setProducts(filteredProducts)
       setAllProducts(catalogProducts)
       setMovements(movData)
+      setFinancialData(finData)
     } catch {
       setApiOnline(false)
     } finally {
@@ -142,6 +148,13 @@ function App() {
     }
   }
 
+  async function handleFinishPurchase(payload) {
+    const result = await api.createPurchase(payload)
+    showToast(`Compra de R$ ${Number(result.total_amount).toFixed(2)} finalizada com sucesso!`)
+    await loadCoreData(filters)
+    return result
+  }
+
   return (
     <div className="erp-shell">
       <Sidebar
@@ -217,6 +230,23 @@ function App() {
                 onCreate={handleCreateCategory}
                 onUpdate={handleUpdateCategory}
                 onDelete={handleDeleteCategory}
+              />
+            )}
+
+            {activeTab === 'market' && (
+              <MarketModeView
+                products={allProducts}
+                categories={categories}
+                onFinishPurchase={handleFinishPurchase}
+                onNavigate={handleNavigate}
+              />
+            )}
+
+            {activeTab === 'finance' && (
+              <FinancialView
+                financialData={financialData}
+                onRefresh={() => loadCoreData(filters)}
+                onNavigate={handleNavigate}
               />
             )}
           </>
