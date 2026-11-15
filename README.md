@@ -1,16 +1,125 @@
-# React + Vite
+# CasaERP — Sistema de Controle de Estoque Doméstico
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Um sistema **ERP pessoal** completo para gestão e controle de estoque residencial, desenvolvido com **React + JavaScript** no frontend e **Node.js + Express + PostgreSQL** no backend.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🛠️ Tecnologias Utilizadas
 
-## React Compiler
+- **Frontend:** React 19, Vite, CSS Moderno (Flexbox/Grid, CSS Variables)
+- **Backend:** Node.js (ES Modules), Express.js, `pg` (Node Postgres Pool), `dotenv`, `cors`
+- **Banco de Dados:** PostgreSQL 17 (com Triggers, Foreign Keys, Transações SQL e Constraints `CHECK`)
+- **Qualidade de Código:** Oxlint, Vite Build
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the Oxlint configuration
+## 📐 Arquitetura do Sistema
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+```
+inventory-control/
+├── database/            # Scripts SQL (Modelagem e dados iniciais)
+│   ├── schema.sql       # Tabelas (categories, products, stock_movements) + triggers
+│   └── seed.sql         # Carga inicial de dados para testes
+├── server/              # API Backend REST em Express
+│   ├── src/
+│   │   ├── db.js        # Pool de conexão PostgreSQL
+│   │   ├── index.js     # Servidor Express e rotas principais
+│   │   └── routes/      # Endpoints (categories, products, movements, dashboard)
+│   ├── .env.example     # Exemplo de variáveis de ambiente
+│   └── package.json
+├── src/                 # Frontend React (ERP UI)
+│   ├── components/      # Sidebar, DashboardView, ProductsView, ProductModal, etc.
+│   ├── services/        # Cliente de API fetch (`api.js`)
+│   ├── utils/           # Formatadores de moeda, data, números e badges
+│   ├── App.jsx          # Componente principal e estado global
+│   └── App.css          # Estilização completa do ERP
+├── vite.config.js       # Configuração do Vite com proxy para /api
+└── README.md
+```
+
+---
+
+## 🚀 Como Executar o Projeto Passo a Passo
+
+### 1. Configurar o Banco de Dados (PostgreSQL)
+1. Instale o PostgreSQL 17 localmente (ou via `winget install PostgreSQL.PostgreSQL.17`).
+2. Abra o **pgAdmin 4** ou terminal `psql` e crie o banco de dados `home_erp`:
+   ```sql
+   CREATE DATABASE home_erp;
+   ```
+3. Execute os scripts SQL da pasta `database/`:
+   ```powershell
+   psql -U postgres -d home_erp -f database/schema.sql
+   psql -U postgres -d home_erp -f database/seed.sql
+   ```
+
+---
+
+### 2. Configurar e Iniciar o Backend (API)
+1. Acesse a pasta `server/`:
+   ```powershell
+   cd server
+   ```
+2. Crie o arquivo `.env` baseado no `.env.example`:
+   ```env
+   PORT=3001
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_NAME=home_erp
+   DB_USER=postgres
+   DB_PASSWORD=sua_senha_do_postgres
+   ```
+3. Instale as dependências e inicie o servidor:
+   ```powershell
+   npm.cmd install
+   npm.cmd run dev
+   ```
+   *A API estará rodando em `http://localhost:3001`.*
+
+---
+
+### 3. Iniciar o Frontend (React)
+1. Na raiz do projeto (`inventory-control/`), inicie o servidor do Vite:
+   ```powershell
+   npm.cmd run dev
+   ```
+2. Abra o navegador em `http://localhost:5173`. O React se conectará automaticamente à API através do proxy do Vite.
+
+---
+
+## 🔀 Guia de Branches para o GitHub
+
+Para subir no seu repositório no GitHub seguindo as fases do aprendizado:
+
+1. **Fase 1 — Banco de Dados:**
+   ```powershell
+   git checkout -b feat/database-schema
+   git add database/
+   git commit -m "feat: adiciona modelagem e seed do PostgreSQL"
+   git push -u origin feat/database-schema
+   ```
+
+2. **Fase 2 — Backend API:**
+   ```powershell
+   git checkout -b feat/backend-api
+   git add server/ vite.config.js
+   git commit -m "feat: implementa API Express com rotas e transacoes PostgreSQL"
+   git push -u origin feat/backend-api
+   ```
+
+3. **Fase 3 — Frontend ERP:**
+   ```powershell
+   git checkout -b feat/frontend-erp
+   git add src/ README.md
+   git commit -m "feat: desenvolve interface ERP em React com Dashboard e CRUDs"
+   git push -u origin feat/frontend-erp
+   ```
+
+---
+
+## 💡 Funcionalidades do ERP Doméstico
+
+- **Dashboard Integrado:** KPIs com contagem de produtos, valor estimado total em reais, lista de reposição automática para itens com estoque baixo e alertas de vencimento em 30 dias.
+- **Gestão de Produtos (CRUD):** Busca em tempo real, filtro por categoria e chave de filtro para itens com estoque baixo.
+- **Movimentações com Auditoria:** Registra entradas (compras), saídas (consumo) e ajustes com recálculo automático de saldo e histórico completo.
+- **Categorias Personalizadas:** Agrupamento por setores da casa com identificadores visuais coloridos.
