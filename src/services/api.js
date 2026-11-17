@@ -58,4 +58,11 @@ export const api = {
     request('/purchases', { method: 'POST', body: JSON.stringify(payload) }),
 
   getFinancial: () => request('/financial'),
+
+  parseNfeXml: (xml) =>
+    request('/nfe/parse-xml', { method: 'POST', body: JSON.stringify({ xml }) }),
+  parseNfeUrl: (url) =>
+    request('/nfe/parse-url', { method: 'POST', body: JSON.stringify({ url }) }),
+  parseNfeText: (text) =>
+    request('/nfe/parse-text', { method: 'POST', body: JSON.stringify({ text }) }),
 }

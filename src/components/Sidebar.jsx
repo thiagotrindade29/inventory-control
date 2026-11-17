@@ -61,7 +61,13 @@ function NavIcon({ name }) {
   )
 }
 
-export default function Sidebar({ activeTab, onSelectTab, apiOnline, lowStockCount }) {
+export default function Sidebar({
+  activeTab,
+  onSelectTab,
+  apiOnline,
+  lowStockCount,
+  onOpenNfeModal,
+}) {
   return (
     <aside className="erp-sidebar">
       <div className="sidebar-brand">
@@ -92,6 +98,18 @@ export default function Sidebar({ activeTab, onSelectTab, apiOnline, lowStockCou
             </button>
           )
         })}
+
+        <div className="sidebar-divider" />
+
+        <button
+          type="button"
+          className="nav-item btn-nfe-nav"
+          onClick={onOpenNfeModal}
+          title="Importe compras de mercado direto para o estoque via foto ou QR Code"
+        >
+          <span className="nfe-icon-pill">🧾</span>
+          <span>Importar Cupom / NF-e</span>
+        </button>
       </nav>
 
       <div className="sidebar-footer">
