@@ -73,8 +73,8 @@ export default function Sidebar({
       <div className="sidebar-brand">
         <div className="brand-logo">CE</div>
         <div>
-          <strong>CasaERP</strong>
-          <span>Controle Doméstico</span>
+          <strong>Casa Financeira </strong>
+          <span>Controle Pessoal</span>
         </div>
       </div>
 

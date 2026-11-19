@@ -15,6 +15,13 @@ dist-ssr
 .env.*
 !.env.example
 
+# .NET Build artifacts
+**/bin/
+**/obj/
+*.user
+*.userosscache
+*.sln.docstates
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
