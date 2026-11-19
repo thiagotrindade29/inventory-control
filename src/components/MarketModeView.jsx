@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import NfeImportModal from './NfeImportModal.jsx'
 
 export default function MarketModeView({
   products = [],
@@ -12,6 +13,7 @@ export default function MarketModeView({
   const [searchQuery, setSearchQuery] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [finishedSummary, setFinishedSummary] = useState(null)
+  const [nfeModalOpen, setNfeModalOpen] = useState(false)
 
   // Itens em estoque baixo para recomendação de reposição
   const lowStockProducts = useMemo(() => {
@@ -210,6 +212,15 @@ export default function MarketModeView({
         </div>
 
         <div className="header-actions">
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => setNfeModalOpen(true)}
+            title="Importar compra via Foto, QR Code da SEFAZ ou Arquivo XML"
+          >
+            🧾 Importar Cupom / NF-e
+          </button>
+
           {lowStockProducts.length > 0 && (
             <button
               type="button"
@@ -561,6 +572,22 @@ export default function MarketModeView({
             {isSubmitting ? 'Processando...' : '🛒 Finalizar Compra e Atualizar Estoque'}
           </button>
         </div>
+      )}
+
+      {nfeModalOpen && (
+        <NfeImportModal
+          categories={categories}
+          onClose={() => setNfeModalOpen(false)}
+          onImportSuccess={async (payload) => {
+            const result = await onFinishPurchase(payload)
+            setFinishedSummary({
+              storeName: result.store_name,
+              totalAmount: result.total_amount,
+              itemsCount: payload.items.length,
+              totalUnits: payload.items.reduce((acc, it) => acc + (Number(it.quantity) || 0), 0),
+            })
+          }}
+        />
       )}
     </div>
   )

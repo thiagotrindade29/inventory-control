@@ -6,6 +6,7 @@ import FinancialView from './components/FinancialView.jsx'
 import MarketModeView from './components/MarketModeView.jsx'
 import MovementModal from './components/MovementModal.jsx'
 import MovementsView from './components/MovementsView.jsx'
+import NfeImportModal from './components/NfeImportModal.jsx'
 import ProductModal from './components/ProductModal.jsx'
 import ProductsView from './components/ProductsView.jsx'
 import Sidebar from './components/Sidebar.jsx'
@@ -16,6 +17,7 @@ function App() {
   const [apiOnline, setApiOnline] = useState(false)
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)
+  const [nfeModalOpen, setNfeModalOpen] = useState(false)
 
   const [dashboard, setDashboard] = useState(null)
   const [categories, setCategories] = useState([])
@@ -162,6 +164,7 @@ function App() {
         onSelectTab={setActiveTab}
         apiOnline={apiOnline}
         lowStockCount={dashboard?.summary?.low_stock_count || 0}
+        onOpenNfeModal={() => setNfeModalOpen(true)}
       />
 
       <main className="erp-main">
@@ -269,6 +272,14 @@ function App() {
           initialType={movementModal.type}
           onClose={() => setMovementModal({ open: false, product: null, type: 'IN' })}
           onSave={handleSaveMovement}
+        />
+      )}
+
+      {nfeModalOpen && (
+        <NfeImportModal
+          categories={categories}
+          onClose={() => setNfeModalOpen(false)}
+          onImportSuccess={handleFinishPurchase}
         />
       )}
 
