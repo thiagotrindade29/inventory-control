@@ -1,0 +1,12 @@
+F:\devops\inventory-control\backend-dotnet\InventoryControl.Domain\bin\Debug\net9.0\InventoryControl.Domain.deps.json
+F:\devops\inventory-control\backend-dotnet\InventoryControl.Domain\bin\Debug\net9.0\InventoryControl.Domain.dll
+F:\devops\inventory-control\backend-dotnet\InventoryControl.Domain\bin\Debug\net9.0\InventoryControl.Domain.pdb
+F:\devops\inventory-control\backend-dotnet\InventoryControl.Domain\obj\Debug\net9.0\InventoryControl.Domain.GeneratedMSBuildEditorConfig.editorconfig
+F:\devops\inventory-control\backend-dotnet\InventoryControl.Domain\obj\Debug\net9.0\InventoryControl.Domain.AssemblyInfoInputs.cache
+F:\devops\inventory-control\backend-dotnet\InventoryControl.Domain\obj\Debug\net9.0\InventoryControl.Domain.AssemblyInfo.cs
+F:\devops\inventory-control\backend-dotnet\InventoryControl.Domain\obj\Debug\net9.0\InventoryControl.Domain.csproj.CoreCompileInputs.cache
+F:\devops\inventory-control\backend-dotnet\InventoryControl.Domain\obj\Debug\net9.0\InventoryControl.Domain.sourcelink.json
+F:\devops\inventory-control\backend-dotnet\InventoryControl.Domain\obj\Debug\net9.0\InventoryControl.Domain.dll
+F:\devops\inventory-control\backend-dotnet\InventoryControl.Domain\obj\Debug\net9.0\refint\InventoryControl.Domain.dll
+F:\devops\inventory-control\backend-dotnet\InventoryControl.Domain\obj\Debug\net9.0\InventoryControl.Domain.pdb
+F:\devops\inventory-control\backend-dotnet\InventoryControl.Domain\obj\Debug\net9.0\ref\InventoryControl.Domain.dll
