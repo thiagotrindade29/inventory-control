@@ -3,19 +3,23 @@ namespace InventoryControl.Domain.Entities;
 public class Product
 {
     public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
+    public string? Sku { get; set; }
     public string? Barcode { get; set; }
-    public string Category { get; set; } = "Geral";
-    public decimal CurrentStock { get; set; }
-    public decimal MinimumStock { get; set; }
-    public string Unit { get; set; } = "UN";
+    public string Name { get; set; } = string.Empty;
+    public int? CategoryId { get; set; }
+    public Category? Category { get; set; }
+    public string Location { get; set; } = "Despensa";
+    public string Unit { get; set; } = "un";
+    public decimal Quantity { get; set; }
+    public decimal MinQuantity { get; set; } = 1;
     public decimal UnitPrice { get; set; }
-    public decimal? PreviousUnitPrice { get; set; }
+    public decimal PreviousUnitPrice { get; set; }
+    public DateTime? ExpirationDate { get; set; }
+    public string? Notes { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-    // Métodos de domínio (Regras de negócio encapsuladas)
-    public bool IsLowStock() => CurrentStock <= MinimumStock;
+    public bool IsLowStock() => Quantity <= MinQuantity;
 
     public void UpdatePrice(decimal newPrice)
     {
@@ -26,8 +30,7 @@ public class Product
 
     public void AdjustStock(decimal quantityDelta)
     {
-        CurrentStock += quantityDelta;
+        Quantity += quantityDelta;
         UpdatedAt = DateTime.UtcNow;
     }
 }
-

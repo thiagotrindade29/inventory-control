@@ -8,11 +8,14 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
-// 2. Controladores e JSON Serialization
+// Registrar Serviços da Aplicação (Injeção de Dependência)
+builder.Services.AddScoped<InventoryControl.Application.Services.NfeService>();
+
+// 2. Controladores e JSON Serialization (preserva exatamente o nome das propriedades)
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        // Converte enum para string (ex: "IN", "OUT")
+        options.JsonSerializerOptions.PropertyNamingPolicy = null;
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 
