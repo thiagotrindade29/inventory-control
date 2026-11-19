@@ -1,0 +1,208 @@
+{
+  "format": 1,
+  "restore": {
+    "F:\\devops\\inventory-control\\backend-dotnet\\InventoryControl.Infrastructure\\InventoryControl.Infrastructure.csproj": {}
+  },
+  "projects": {
+    "F:\\devops\\inventory-control\\backend-dotnet\\InventoryControl.Application\\InventoryControl.Application.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "F:\\devops\\inventory-control\\backend-dotnet\\InventoryControl.Application\\InventoryControl.Application.csproj",
+        "projectName": "InventoryControl.Application",
+        "projectPath": "F:\\devops\\inventory-control\\backend-dotnet\\InventoryControl.Application\\InventoryControl.Application.csproj",
+        "packagesPath": "C:\\Users\\thiag\\.nuget\\packages\\",
+        "outputPath": "F:\\devops\\inventory-control\\backend-dotnet\\InventoryControl.Application\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\thiag\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {
+              "F:\\devops\\inventory-control\\backend-dotnet\\InventoryControl.Domain\\InventoryControl.Domain.csproj": {
+                "projectPath": "F:\\devops\\inventory-control\\backend-dotnet\\InventoryControl.Domain\\InventoryControl.Domain.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.321/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "F:\\devops\\inventory-control\\backend-dotnet\\InventoryControl.Domain\\InventoryControl.Domain.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "F:\\devops\\inventory-control\\backend-dotnet\\InventoryControl.Domain\\InventoryControl.Domain.csproj",
+        "projectName": "InventoryControl.Domain",
+        "projectPath": "F:\\devops\\inventory-control\\backend-dotnet\\InventoryControl.Domain\\InventoryControl.Domain.csproj",
+        "packagesPath": "C:\\Users\\thiag\\.nuget\\packages\\",
+        "outputPath": "F:\\devops\\inventory-control\\backend-dotnet\\InventoryControl.Domain\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\thiag\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.321/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "F:\\devops\\inventory-control\\backend-dotnet\\InventoryControl.Infrastructure\\InventoryControl.Infrastructure.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "F:\\devops\\inventory-control\\backend-dotnet\\InventoryControl.Infrastructure\\InventoryControl.Infrastructure.csproj",
+        "projectName": "InventoryControl.Infrastructure",
+        "projectPath": "F:\\devops\\inventory-control\\backend-dotnet\\InventoryControl.Infrastructure\\InventoryControl.Infrastructure.csproj",
+        "packagesPath": "C:\\Users\\thiag\\.nuget\\packages\\",
+        "outputPath": "F:\\devops\\inventory-control\\backend-dotnet\\InventoryControl.Infrastructure\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\thiag\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {
+              "F:\\devops\\inventory-control\\backend-dotnet\\InventoryControl.Application\\InventoryControl.Application.csproj": {
+                "projectPath": "F:\\devops\\inventory-control\\backend-dotnet\\InventoryControl.Application\\InventoryControl.Application.csproj"
+              },
+              "F:\\devops\\inventory-control\\backend-dotnet\\InventoryControl.Domain\\InventoryControl.Domain.csproj": {
+                "projectPath": "F:\\devops\\inventory-control\\backend-dotnet\\InventoryControl.Domain\\InventoryControl.Domain.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.300"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "dependencies": {
+            "Microsoft.EntityFrameworkCore.Design": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[9.0.2, )"
+            },
+            "Npgsql.EntityFrameworkCore.PostgreSQL": {
+              "target": "Package",
+              "version": "[9.0.4, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.321/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}
