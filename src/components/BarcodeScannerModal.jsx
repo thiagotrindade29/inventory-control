@@ -11,6 +11,18 @@ export default function BarcodeScannerModal({ isOpen, onClose, onScanSuccess }) 
     if (!isOpen) return
 
     let isMounted = true
+    setErrorMessage('')
+    setCameraActive(false)
+
+    if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+      setErrorMessage(
+        'O navegador só libera a câmera em uma origem segura. Abra o sistema em HTTPS com certificado confiável; localhost funciona apenas no próprio computador.'
+      )
+      return () => {
+        isMounted = false
+      }
+    }
+
     const formats = [
       Html5QrcodeSupportedFormats.EAN_13,
       Html5QrcodeSupportedFormats.EAN_8,
@@ -66,9 +78,13 @@ export default function BarcodeScannerModal({ isOpen, onClose, onScanSuccess }) 
       })
       .catch((err) => {
         if (isMounted) {
-          setErrorMessage(
-            'Não foi possível acessar a câmera do celular. Permita o acesso à câmera nas configurações do navegador ou use HTTPS.'
-          )
+          const message = err?.name === 'NotAllowedError'
+            ? 'O acesso à câmera foi negado. Libere a permissão de câmera nas configurações do navegador e tente novamente.'
+            : err?.name === 'NotFoundError'
+              ? 'Nenhuma câmera compatível foi encontrada neste dispositivo.'
+              : 'Não foi possível iniciar a câmera. Verifique se outro aplicativo está usando a câmera e tente novamente.'
+
+          setErrorMessage(message)
         }
       })
 

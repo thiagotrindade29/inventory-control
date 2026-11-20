@@ -171,10 +171,10 @@ function App() {
         {!apiOnline && !loading && (
           <div className="connection-banner">
             <div>
-              <strong>Backend não encontrado em http://localhost:3001</strong>
+              <strong>API não encontrada</strong>
               <p>
-                Abra um terminal na pasta <code>server/</code> e rode <code>npm.cmd run dev</code>{' '}
-                para conectar ao PostgreSQL.
+                Inicie a API na pasta <code>server/</code> com <code>npm.cmd run dev</code> e
+                confirme a conexão com o PostgreSQL.
               </p>
             </div>
             <button

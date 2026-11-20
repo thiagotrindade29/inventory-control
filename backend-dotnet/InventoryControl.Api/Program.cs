@@ -5,6 +5,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 // 1. Configurar Conexão com o Banco PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException(
+        "Configure ConnectionStrings__DefaultConnection com a connection string do PostgreSQL. " +
+        "Use User Secrets no desenvolvimento local.");
+}
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 

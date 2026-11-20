@@ -6,11 +6,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: true,               // permite acesso externo (LAN)
-    https: true,              // Vite gera certificado auto‑assinado temporário
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:3001',
         changeOrigin: true,
       },
     },

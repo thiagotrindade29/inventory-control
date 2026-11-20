@@ -85,6 +85,10 @@ inventory-control/
    ```
 2. Abra o navegador em `http://localhost:5173`. O React se conectará automaticamente à API através do proxy do Vite.
 
+Para testar o leitor de câmera no próprio computador, `localhost` é suficiente. Para testar em um celular, use uma origem HTTPS com certificado confiável (por exemplo, um túnel HTTPS apontando para a porta `5173`). A opção `host: true` permite acesso pela rede local, mas acessar o IP do computador por HTTP não libera a câmera do navegador.
+
+O projeto também contém uma API alternativa em .NET. A aplicação React deste README usa a API Express de `server/`. Se executar a API .NET, configure `ConnectionStrings__DefaultConnection` por variável de ambiente ou User Secrets; a connection string não deve ser gravada no `appsettings.json`.
+
 ---
 
 ## 🔀 Guia de Branches para o GitHub
