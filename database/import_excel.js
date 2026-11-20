@@ -4,7 +4,7 @@ import dotenv from 'dotenv'
 import pg from 'pg'
 import XLSX from 'xlsx'
 
-dotenv.config({ path: path.resolve('server/.env') })
+dotenv.config({ path: path.resolve('.env.local') })
 
 const { Pool } = pg
 

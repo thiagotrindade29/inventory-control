@@ -85,6 +85,7 @@ public class PurchasesController : ControllerBase
 
     public class CreatePurchaseRequest
     {
+        public string? Store_Name { get; set; }
         public string? StoreName { get; set; }
         public string? Notes { get; set; }
         public List<CreatePurchaseItemRequest> Items { get; set; } = new();
@@ -92,12 +93,16 @@ public class PurchasesController : ControllerBase
 
     public class CreatePurchaseItemRequest
     {
-        public int? ProductId { get; set; }
+        public int? Product_Id { get; set; }
         public string? ProductName { get; set; }
+        public string? Name { get; set; }
         public string? Description { get; set; }
         public string? Barcode { get; set; }
         public decimal Quantity { get; set; }
+        public decimal Unit_Price { get; set; }
         public decimal UnitPrice { get; set; }
+        public decimal? Previous_Unit_Price { get; set; }
+        public int? Category_Id { get; set; }
         public string? Category { get; set; }
     }
 
@@ -119,23 +124,30 @@ public class PurchasesController : ControllerBase
 
             var purchase = new Purchase
             {
-                StoreName = string.IsNullOrWhiteSpace(dto.StoreName) ? "Supermercado" : dto.StoreName,
+                StoreName = string.IsNullOrWhiteSpace(dto.Store_Name ?? dto.StoreName)
+                    ? "Supermercado"
+                    : (dto.Store_Name ?? dto.StoreName)!,
                 Notes = dto.Notes,
                 CreatedAt = DateTime.UtcNow
             };
 
             foreach (var itemDto in dto.Items)
             {
-                var name = !string.IsNullOrWhiteSpace(itemDto.ProductName) ? itemDto.ProductName : itemDto.Description ?? "Produto";
-                var itemTotal = Math.Round(itemDto.Quantity * itemDto.UnitPrice, 2);
+                var name = !string.IsNullOrWhiteSpace(itemDto.ProductName)
+                    ? itemDto.ProductName
+                    : !string.IsNullOrWhiteSpace(itemDto.Name)
+                        ? itemDto.Name
+                        : itemDto.Description ?? "Produto";
+                var unitPrice = itemDto.Unit_Price != 0 ? itemDto.Unit_Price : itemDto.UnitPrice;
+                var itemTotal = Math.Round(itemDto.Quantity * unitPrice, 2);
                 totalAmount += itemTotal;
                 totalItems += itemDto.Quantity;
 
                 Product? product = null;
 
-                if (itemDto.ProductId.HasValue && itemDto.ProductId.Value > 0)
+                if (itemDto.Product_Id.HasValue && itemDto.Product_Id.Value > 0)
                 {
-                    product = await _context.Products.FindAsync(itemDto.ProductId.Value);
+                    product = await _context.Products.FindAsync(itemDto.Product_Id.Value);
                 }
                 else if (!string.IsNullOrWhiteSpace(itemDto.Barcode))
                 {
@@ -148,13 +160,16 @@ public class PurchasesController : ControllerBase
 
                 if (product == null)
                 {
-                    Category? cat = null;
-                    if (!string.IsNullOrWhiteSpace(itemDto.Category))
+                    Category? cat = itemDto.Category_Id.HasValue
+                        ? await _context.Categories.FindAsync(itemDto.Category_Id.Value)
+                        : null;
+                    var categoryName = itemDto.Category;
+                    if (cat == null && !string.IsNullOrWhiteSpace(categoryName))
                     {
-                        cat = await _context.Categories.FirstOrDefaultAsync(c => c.Name.ToLower() == itemDto.Category.ToLower());
+                        cat = await _context.Categories.FirstOrDefaultAsync(c => c.Name.ToLower() == categoryName.ToLower());
                         if (cat == null)
                         {
-                            cat = new Category { Name = itemDto.Category };
+                            cat = new Category { Name = categoryName.Trim() };
                             _context.Categories.Add(cat);
                             await _context.SaveChangesAsync();
                         }
@@ -167,7 +182,7 @@ public class PurchasesController : ControllerBase
                         CategoryId = cat?.Id,
                         Quantity = 0,
                         MinQuantity = 1,
-                        UnitPrice = itemDto.UnitPrice,
+                        UnitPrice = unitPrice,
                         PreviousUnitPrice = 0,
                         CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow
@@ -185,8 +200,8 @@ public class PurchasesController : ControllerBase
                     ProductName = name,
                     Barcode = itemDto.Barcode ?? product.Barcode,
                     Quantity = itemDto.Quantity,
-                    UnitPrice = itemDto.UnitPrice,
-                    PreviousUnitPrice = previousPrice,
+                    UnitPrice = unitPrice,
+                    PreviousUnitPrice = itemDto.Previous_Unit_Price ?? previousPrice,
                     TotalPrice = itemTotal,
                     CreatedAt = DateTime.UtcNow
                 };
@@ -194,7 +209,7 @@ public class PurchasesController : ControllerBase
                 purchase.Items.Add(purchaseItem);
 
                 product.AdjustStock(itemDto.Quantity);
-                product.UpdatePrice(itemDto.UnitPrice);
+                product.UpdatePrice(unitPrice);
 
                 var movement = new StockMovement
                 {

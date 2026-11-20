@@ -86,7 +86,7 @@ export default function ProductsView({
                   const status = getStockStatus(product.quantity, product.min_quantity)
                   return (
                     <tr key={product.id}>
-                      <td>
+                      <td data-label="Produto">
                         <div className="product-cell">
                           <strong>{product.name}</strong>
                           <small>
@@ -98,7 +98,7 @@ export default function ProductsView({
                           </small>
                         </div>
                       </td>
-                      <td>
+                      <td data-label="Categoria">
                         {product.category_name ? (
                           <span
                             className="category-chip"
@@ -110,8 +110,8 @@ export default function ProductsView({
                           <span className="text-muted">Sem categoria</span>
                         )}
                       </td>
-                      <td>{product.location}</td>
-                      <td>
+                      <td data-label="Local">{product.location}</td>
+                      <td data-label="Estoque">
                         <strong>
                           {formatNumber(product.quantity)} {product.unit}
                         </strong>
@@ -119,10 +119,10 @@ export default function ProductsView({
                           Mín: {formatNumber(product.min_quantity)} {product.unit}
                         </small>
                       </td>
-                      <td>
+                      <td data-label="Status">
                         <span className={`badge ${status.className}`}>{status.label}</span>
                       </td>
-                      <td>
+                      <td data-label="Preço unitário">
                         {formatCurrency(product.unit_price)}
                         {Number(product.previous_unit_price || 0) > 0 &&
                           Number(product.previous_unit_price) !== Number(product.unit_price) && (
@@ -134,8 +134,8 @@ export default function ProductsView({
                           Total: {formatCurrency(product.quantity * product.unit_price)}
                         </small>
                       </td>
-                      <td>{formatDate(product.expiration_date)}</td>
-                      <td className="text-right">
+                      <td data-label="Validade">{formatDate(product.expiration_date)}</td>
+                      <td className="text-right" data-label="Ações">
                         <div className="row-actions">
                           <button
                             type="button"

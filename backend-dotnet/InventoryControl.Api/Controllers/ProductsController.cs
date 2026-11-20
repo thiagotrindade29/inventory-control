@@ -117,6 +117,7 @@ public class ProductsController : ControllerBase
         public decimal MinQuantity { get; set; }
         public decimal Unit_Price { get; set; }
         public decimal UnitPrice { get; set; }
+        public decimal? Previous_Unit_Price { get; set; }
         public DateTime? Expiration_Date { get; set; }
         public DateTime? ExpirationDate { get; set; }
         public string? Notes { get; set; }
@@ -137,6 +138,7 @@ public class ProductsController : ControllerBase
             Quantity = input.Quantity,
             MinQuantity = input.Min_Quantity > 0 ? input.Min_Quantity : (input.MinQuantity > 0 ? input.MinQuantity : 1),
             UnitPrice = input.Unit_Price > 0 ? input.Unit_Price : input.UnitPrice,
+            PreviousUnitPrice = input.Previous_Unit_Price ?? 0,
             ExpirationDate = input.Expiration_Date ?? input.ExpirationDate,
             Notes = input.Notes,
             CreatedAt = DateTime.UtcNow,

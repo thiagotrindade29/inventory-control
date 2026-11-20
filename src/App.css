@@ -53,6 +53,12 @@
   flex: 1;
 }
 
+.mobile-bottom-nav,
+.mobile-more-backdrop,
+.mobile-more-menu {
+  display: none;
+}
+
 .nav-item {
   display: flex;
   align-items: center;
@@ -907,8 +913,109 @@
 }
 
 @media (max-width: 640px) {
+  .erp-shell { display: block; min-height: 100dvh; }
+  .erp-sidebar {
+    position: sticky; top: 0; z-index: 30; padding: 10px 16px;
+    border-right: 0; border-bottom: 1px solid #1e293b;
+  }
+  .sidebar-brand { padding: 0; border: 0; }
+  .brand-logo { width: 36px; height: 36px; }
+  .sidebar-brand strong { font-size: .95rem; }
+  .sidebar-brand span, .sidebar-nav, .sidebar-footer { display: none; }
+  .mobile-bottom-nav {
+    position: fixed; z-index: 50; inset: auto 0 0; display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    padding: 6px max(8px, env(safe-area-inset-left)) calc(6px + env(safe-area-inset-bottom));
+    background: rgba(255,255,255,.97); border-top: 1px solid #e2e8f0;
+    box-shadow: 0 -8px 24px rgba(15,23,42,.08); backdrop-filter: blur(14px);
+  }
+  .mobile-more-backdrop { display: block; }
+  .mobile-more-menu { display: grid; }
+  .mobile-nav-item {
+    position: relative; display: flex; flex-direction: column; justify-content: center;
+    align-items: center; gap: 3px; min-width: 0; min-height: 52px; padding: 4px 2px;
+    border: 0; border-radius: 10px; color: #64748b; background: transparent;
+    font: inherit; font-size: .68rem; font-weight: 600;
+  }
+  .mobile-nav-item svg { width: 21px; height: 21px; }
+  .mobile-nav-item.active { color: #2563eb; background: #eff6ff; }
+  .mobile-nav-badge { position: absolute; top: 0; right: 10%; min-width: 16px; padding: 1px 4px; border-radius: 99px; color: white; background: #f59e0b; font-size: .62rem; }
+  .mobile-more-backdrop { position: fixed; z-index: 48; inset: 0; border: 0; background: rgba(15,23,42,.28); }
+  .mobile-more-menu { position: fixed; z-index: 49; right: 12px; bottom: calc(68px + env(safe-area-inset-bottom)); display: grid; gap: 4px; width: min(280px, calc(100vw - 24px)); padding: 8px; border: 1px solid #e2e8f0; border-radius: 16px; background: white; box-shadow: 0 16px 40px rgba(15,23,42,.2); }
+  .mobile-more-menu button { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 8px 12px; border: 0; border-radius: 10px; background: transparent; color: #334155; text-align: left; font: inherit; }
+  .mobile-more-menu button:hover { background: #f1f5f9; }
+  .mobile-more-menu svg { width: 20px; height: 20px; }
+  .erp-main { min-width: 0; padding: 18px 14px calc(92px + env(safe-area-inset-bottom)); }
+  .view-header { align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .view-header > * { min-width: 0; }
+  .view-header .btn { width: 100%; min-height: 44px; }
+  .panel { min-width: 0; }
+  .table-wrap { overflow: visible; }
+  .erp-table, .erp-table tbody { display: block; width: 100%; }
+  .erp-table thead { display: none; }
+  .erp-table tbody { display: grid; gap: 12px; }
+  .erp-table tbody tr { display: grid; gap: 0; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 14px; background: white; box-shadow: 0 3px 12px rgba(15,23,42,.04); }
+  .erp-table tbody td { display: grid; grid-template-columns: minmax(90px, 34%) minmax(0, 1fr); align-items: start; gap: 10px; min-width: 0; padding: 9px 0; border-bottom: 1px solid #f1f5f9; text-align: left !important; overflow-wrap: anywhere; }
+  .erp-table tbody td:last-child { border-bottom: 0; }
+  .erp-table tbody td::before { content: attr(data-label); color: #64748b; font-size: .75rem; font-weight: 600; }
+  .erp-table tbody td[colspan] { display: block; text-align: center !important; }
+  .erp-table tbody td[colspan]::before { content: none; }
+  .row-actions { justify-content: flex-start; flex-wrap: wrap; }
+  .row-actions .btn { min-height: 40px; }
+  .toolbar-grid, .form-grid { grid-template-columns: minmax(0, 1fr); }
+  .financial-dashboard-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .modal-backdrop { align-items: end; padding: 0; }
+  .modal-card { width: 100%; max-height: 92dvh; overflow-y: auto; border-radius: 18px 18px 0 0; padding-bottom: env(safe-area-inset-bottom); }
+  .nfe-nav-tabs { max-width: 100%; }
+
+  /* Mercado e Finanças: restringe filhos flex/grid ao espaço do viewport. */
+  .market-mode-view,
+  .financial-view,
+  .market-mode-view > *,
+  .financial-view > *,
+  .market-mode-view .erp-card,
+  .financial-view .erp-card { width: 100%; max-width: 100%; min-width: 0; }
+  .market-mode-view .view-header,
+  .financial-view .view-header { display: flex; flex-direction: column; align-items: stretch; }
+  .market-mode-view .view-header > div,
+  .financial-view .view-header > div { width: 100%; min-width: 0; }
+  .header-actions { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; gap: 8px; }
+  .market-mode-view .header-actions .btn,
+  .financial-view .header-actions .btn { width: 100%; min-width: 0; min-height: 44px; white-space: normal; }
+  .market-store-bar { width: 100%; min-width: 0; padding: 14px; }
+  .market-store-bar .form-group,
+  .market-store-bar .input-field { width: 100%; min-width: 0; }
+  .market-search-container,
+  .market-search-container .market-search-box { width: 100%; min-width: 0; }
+  .market-search-container .btn-camera-scan { width: 100%; min-height: 48px; justify-content: center; white-space: normal; }
+  .market-cart-container,
+  .cart-live-summary,
+  .summary-col,
+  .summary-actions { width: 100%; min-width: 0; }
+  .cart-live-summary { padding: 14px; gap: 14px; }
+  .summary-value { overflow-wrap: anywhere; }
+  .summary-actions .btn { width: 100%; min-height: 48px; white-space: normal; }
+  .empty-cart-state { padding: 28px 16px !important; }
+  .empty-cart-actions { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .empty-cart-actions .btn { width: 100%; min-width: 0; min-height: 44px; white-space: normal; }
+  .market-mode-view .new-item-inputs,
+  .market-mode-view .input-currency-wrapper { width: 100%; min-width: 0; }
+  .market-mode-view .input-currency-wrapper input { flex: 1; min-width: 0; width: 100%; }
+  .market-mode-view .erp-table tbody td { grid-template-columns: minmax(76px, 30%) minmax(0, 1fr); }
+  .financial-view .card-header { align-items: stretch; flex-direction: column; min-width: 0; }
+  .financial-view .card-header > * { min-width: 0; max-width: 100%; }
+  .financial-view .table-filters-toolbar { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; min-width: 0; }
+  .financial-view .table-filters-toolbar > input,
+  .financial-view .table-filters-toolbar > select { width: 100%; min-width: 0; }
+  .financial-view .btn-toggle-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; min-width: 0; white-space: normal; }
+  .financial-view .toggle-btn { min-width: 0; min-height: 44px; padding: 8px 5px; white-space: normal; overflow-wrap: anywhere; }
+  .financial-view .purchases-table-wrapper,
+  .financial-view .table-responsive { width: 100%; max-width: 100%; min-width: 0; overflow: visible; }
+  .financial-view .kpi-card,
+  .financial-view .kpi-value { min-width: 0; overflow-wrap: anywhere; }
+
   .erp-main {
-    padding: 18px 16px;
+    padding: 18px 14px calc(92px + env(safe-area-inset-bottom));
   }
 
   .kpi-grid,

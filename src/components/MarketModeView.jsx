@@ -554,7 +554,7 @@ export default function MarketModeView({
 
                     return (
                       <tr key={item.id}>
-                        <td>
+                        <td data-label="Produto">
                           {item.product_id ? (
                             <div className="product-cell">
                               <strong>{item.name}</strong>
@@ -581,7 +581,7 @@ export default function MarketModeView({
                           )}
                         </td>
 
-                        <td style={{ width: '110px' }}>
+                        <td style={{ width: '110px' }} data-label="Quantidade">
                           <input
                             type="number"
                             step="any"
@@ -594,7 +594,7 @@ export default function MarketModeView({
                           />
                         </td>
 
-                        <td style={{ width: '130px' }}>
+                        <td style={{ width: '130px' }} data-label="Preço unitário">
                           <div className="input-currency-wrapper">
                             <span>R$</span>
                             <input
@@ -610,17 +610,17 @@ export default function MarketModeView({
                           </div>
                         </td>
 
-                        <td>
+                        <td data-label="Preço anterior">
                           <span className="text-muted">
                             {prevPrice > 0 ? `R$ ${prevPrice.toFixed(2)}` : '—'}
                           </span>
                         </td>
 
-                        <td>
+                        <td data-label="Subtotal">
                           <strong>R$ {subtotal.toFixed(2)}</strong>
                         </td>
 
-                        <td>
+                        <td data-label="Variação">
                           {prevPrice === 0 ? (
                             <span className="badge badge-info">Novo</span>
                           ) : diffPercent < -0.5 ? (
@@ -636,7 +636,7 @@ export default function MarketModeView({
                           )}
                         </td>
 
-                        <td>
+                        <td data-label="Ações">
                           <button
                             type="button"
                             className="btn btn-xs btn-danger"

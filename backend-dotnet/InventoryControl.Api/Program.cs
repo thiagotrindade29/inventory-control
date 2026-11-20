@@ -17,29 +17,19 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Registrar Serviços da Aplicação (Injeção de Dependência)
 builder.Services.AddScoped<InventoryControl.Application.Services.NfeService>();
+builder.Services.AddHttpClient();
 
 // 2. Controladores e JSON Serialization (preserva exatamente o nome das propriedades)
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.PropertyNamingPolicy = null;
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 
 // 3. Documentação Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
-// 4. Configurar CORS (Permite comunicação com o Frontend React)
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAll", policy =>
-    {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
-    });
-});
 
 var app = builder.Build();
 
@@ -49,8 +39,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-app.UseCors("AllowAll");
 
 app.UseAuthorization();
 

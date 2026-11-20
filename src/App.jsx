@@ -173,8 +173,9 @@ function App() {
             <div>
               <strong>API não encontrada</strong>
               <p>
-                Inicie a API na pasta <code>server/</code> com <code>npm.cmd run dev</code> e
-                confirme a conexão com o PostgreSQL.
+                Inicie a API ASP.NET Core executando{' '}
+                <code>dotnet run --project backend-dotnet/InventoryControl.Api --launch-profile http</code>{' '}
+                na raiz e confirme a conexão com o PostgreSQL.
               </p>
             </div>
             <button

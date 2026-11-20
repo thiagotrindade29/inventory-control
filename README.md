@@ -1,13 +1,13 @@
 # CasaERP — Sistema de Controle de Estoque Doméstico
 
-Um sistema **ERP pessoal** completo para gestão e controle de estoque residencial, desenvolvido com **React + JavaScript** no frontend e **Node.js + Express + PostgreSQL** no backend.
+Um sistema **ERP pessoal** para gestão e controle de estoque residencial, desenvolvido com **React + JavaScript** no frontend e **ASP.NET Core .NET 9 + Entity Framework Core + PostgreSQL** no backend.
 
 ---
 
 ## 🛠️ Tecnologias Utilizadas
 
 - **Frontend:** React 19, Vite, CSS Moderno (Flexbox/Grid, CSS Variables)
-- **Backend:** Node.js (ES Modules), Express.js, `pg` (Node Postgres Pool), `dotenv`, `cors`
+- **Backend:** ASP.NET Core .NET 9, Entity Framework Core, Npgsql
 - **Banco de Dados:** PostgreSQL 17 (com Triggers, Foreign Keys, Transações SQL e Constraints `CHECK`)
 - **Qualidade de Código:** Oxlint, Vite Build
 
@@ -20,13 +20,11 @@ inventory-control/
 ├── database/            # Scripts SQL (Modelagem e dados iniciais)
 │   ├── schema.sql       # Tabelas (categories, products, stock_movements) + triggers
 │   └── seed.sql         # Carga inicial de dados para testes
-├── server/              # API Backend REST em Express
-│   ├── src/
-│   │   ├── db.js        # Pool de conexão PostgreSQL
-│   │   ├── index.js     # Servidor Express e rotas principais
-│   │   └── routes/      # Endpoints (categories, products, movements, dashboard)
-│   ├── .env.example     # Exemplo de variáveis de ambiente
-│   └── package.json
+├── backend-dotnet/      # API REST ASP.NET Core
+│   ├── InventoryControl.Api/          # Controllers, configuração e inicialização
+│   ├── InventoryControl.Application/  # Serviços e DTOs
+│   ├── InventoryControl.Domain/       # Entidades e regras de negócio
+│   └── InventoryControl.Infrastructure/ # EF Core e acesso ao PostgreSQL
 ├── src/                 # Frontend React (ERP UI)
 │   ├── components/      # Sidebar, DashboardView, ProductsView, ProductModal, etc.
 │   ├── services/        # Cliente de API fetch (`api.js`)
@@ -55,39 +53,41 @@ inventory-control/
 
 ---
 
-### 2. Configurar e Iniciar o Backend (API)
-1. Acesse a pasta `server/`:
+### 2. Configurar e Iniciar o Backend ASP.NET Core
+1. Guarde a conexão do PostgreSQL em User Secrets (faça `init` uma vez):
    ```powershell
-   cd server
+   dotnet user-secrets init --project backend-dotnet/InventoryControl.Api
+   dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=home_erp;Username=postgres;Password=SUA_SENHA" --project backend-dotnet/InventoryControl.Api
    ```
-2. Crie o arquivo `.env` baseado no `.env.example`:
-   ```env
-   PORT=3001
-   DB_HOST=localhost
-   DB_PORT=5432
-   DB_NAME=home_erp
-   DB_USER=postgres
-   DB_PASSWORD=sua_senha_do_postgres
-   ```
-3. Instale as dependências e inicie o servidor:
+2. Inicie a API:
    ```powershell
-   npm.cmd install
-   npm.cmd run dev
+   dotnet run --project backend-dotnet/InventoryControl.Api --launch-profile http
    ```
-   *A API estará rodando em `http://localhost:3001`.*
+   *A API estará em `http://localhost:5000`; teste `http://localhost:5000/api/health`.*
 
 ---
 
 ### 3. Iniciar o Frontend (React)
-1. Na raiz do projeto (`inventory-control/`), inicie o servidor do Vite:
+1. Em outro terminal, na raiz do projeto, inicie o frontend:
    ```powershell
    npm.cmd run dev
    ```
-2. Abra o navegador em `http://localhost:5173`. O React se conectará automaticamente à API através do proxy do Vite.
+2. Abra `http://localhost:5173`. O Vite encaminha `/api` para a API ASP.NET Core na porta `5000`.
 
-Para testar o leitor de câmera no próprio computador, `localhost` é suficiente. Para testar em um celular, use uma origem HTTPS com certificado confiável (por exemplo, um túnel HTTPS apontando para a porta `5173`). A opção `host: true` permite acesso pela rede local, mas acessar o IP do computador por HTTP não libera a câmera do navegador.
+#### Abrir no celular com HTTPS durante o desenvolvimento
 
-O projeto também contém uma API alternativa em .NET. A aplicação React deste README usa a API Express de `server/`. Se executar a API .NET, configure `ConnectionStrings__DefaultConnection` por variável de ambiente ou User Secrets; a connection string não deve ser gravada no `appsettings.json`.
+O navegador do celular exige HTTPS confiável para liberar a câmera. `localhost` funciona no computador de desenvolvimento, mas `http://IP-DO-PC:5173` não é uma origem segura. Para acesso local sem expor o sistema à internet:
+
+1. Instale [mkcert](https://github.com/FiloSottile/mkcert) no Windows com `winget install --exact --id FiloSottile.mkcert` e execute `mkcert -install` uma vez no computador.
+2. Descubra o IPv4 do Wi-Fi do computador com `ipconfig` (por exemplo, `192.168.1.20`). Na raiz do projeto, gere um certificado para esse IP, substituindo o exemplo pelo endereço real:
+   ```powershell
+   New-Item -ItemType Directory -Force .cert
+   mkcert -key-file .cert/dev-key.pem -cert-file .cert/dev-cert.pem localhost 127.0.0.1 192.168.1.20
+   ```
+3. Reinicie o Vite. Com os dois arquivos em `.cert/`, ele inicia em HTTPS e mantém o proxy para o backend .NET.
+4. Transfira `.cert/rootCA.pem` para o celular, instale-o como certificado raiz e marque-o como confiável nas configurações do aparelho. Abra `https://192.168.1.20:5173` (usando o IP real). Computador e celular precisam estar na mesma rede Wi-Fi.
+
+Não compartilhe `rootCA-key.pem` e não use esse certificado de desenvolvimento em produção. O código da antiga API Express foi removido; a API usada pelo projeto é ASP.NET Core. O importador de planilhas usa `.env.local` na raiz para suas credenciais.
 
 ---
 
@@ -105,10 +105,10 @@ Para subir no seu repositório no GitHub seguindo as fases do aprendizado:
 
 2. **Fase 2 — Backend API:**
    ```powershell
-   git checkout -b feat/backend-api
-   git add server/ vite.config.js
-   git commit -m "feat: implementa API Express com rotas e transacoes PostgreSQL"
-   git push -u origin feat/backend-api
+   git checkout -b feat/backend-dotnet
+   git add backend-dotnet/ vite.config.js
+   git commit -m "feat: implementa API ASP.NET Core com PostgreSQL"
+   git push -u origin feat/backend-dotnet
    ```
 
 3. **Fase 3 — Frontend ERP:**
