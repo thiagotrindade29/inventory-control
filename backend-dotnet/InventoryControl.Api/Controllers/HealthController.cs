@@ -1,10 +1,12 @@
 using InventoryControl.Infrastructure.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace InventoryControl.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[AllowAnonymous]
 public class HealthController : ControllerBase
 {
     private readonly AppDbContext _context;
@@ -40,13 +42,13 @@ public class HealthController : ControllerBase
                 message = "Não foi possível conectar ao PostgreSQL."
             });
         }
-        catch (Exception ex)
+        catch
         {
             return StatusCode(500, new
             {
                 status = "error",
                 database = "offline",
-                details = ex.Message
+                message = "Não foi possível verificar a conexão com o banco."
             });
         }
     }

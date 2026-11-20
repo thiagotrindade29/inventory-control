@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import './App.css'
+import AuthView from './components/AuthView.jsx'
+import UsersView from './components/UsersView.jsx'
 import CategoriesView from './components/CategoriesView.jsx'
 import DashboardView from './components/DashboardView.jsx'
 import FinancialView from './components/FinancialView.jsx'
@@ -10,9 +12,12 @@ import NfeImportModal from './components/NfeImportModal.jsx'
 import ProductModal from './components/ProductModal.jsx'
 import ProductsView from './components/ProductsView.jsx'
 import Sidebar from './components/Sidebar.jsx'
-import { api } from './services/api.js'
+import { api, clearAuthSession, getAuthSession, setAuthSession } from './services/api.js'
 
 function App() {
+  const [authChecked, setAuthChecked] = useState(false)
+  const [setupRequired, setSetupRequired] = useState(false)
+  const [authUser, setAuthUser] = useState(() => getAuthSession()?.user || null)
   const [activeTab, setActiveTab] = useState('dashboard')
   const [apiOnline, setApiOnline] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -38,6 +43,13 @@ function App() {
     product: null,
     type: 'IN',
   })
+
+  useEffect(() => {
+    api.getAuthStatus()
+      .then((status) => setSetupRequired(status.setupRequired))
+      .catch(() => setSetupRequired(false))
+      .finally(() => setAuthChecked(true))
+  }, [])
 
   const showToast = useCallback((message, variant = 'success') => {
     setToast({ message, variant })
@@ -69,14 +81,33 @@ function App() {
       setFinancialData(finData)
     } catch {
       setApiOnline(false)
+      if (!getAuthSession()) setAuthUser(null)
     } finally {
       setLoading(false)
     }
   }, [])
 
   useEffect(() => {
+    if (!authChecked || !getAuthSession()) {
+      setLoading(false)
+      return
+    }
     loadCoreData(filters)
-  }, [loadCoreData, filters])
+  }, [authChecked, authUser, loadCoreData, filters])
+
+  function handleAuthenticated(session) {
+    setAuthSession(session)
+    setAuthUser(session.user)
+    setSetupRequired(false)
+    setLoading(true)
+  }
+
+  function handleLogout() {
+    clearAuthSession()
+    setAuthUser(null)
+    setApiOnline(false)
+    setLoading(false)
+  }
 
   function handleNavigate(tab, options = {}) {
     setActiveTab(tab)
@@ -157,6 +188,14 @@ function App() {
     return result
   }
 
+  if (!authChecked) {
+    return <main className="auth-screen"><p>Verificando acesso…</p></main>
+  }
+
+  if (!authUser || !getAuthSession()) {
+    return <AuthView setupRequired={setupRequired} onAuthenticated={handleAuthenticated} />
+  }
+
   return (
     <div className="erp-shell">
       <Sidebar
@@ -165,6 +204,8 @@ function App() {
         apiOnline={apiOnline}
         lowStockCount={dashboard?.summary?.low_stock_count || 0}
         onOpenNfeModal={() => setNfeModalOpen(true)}
+        authUser={authUser}
+        onLogout={handleLogout}
       />
 
       <main className="erp-main">
@@ -253,6 +294,8 @@ function App() {
                 onNavigate={handleNavigate}
               />
             )}
+
+            {activeTab === 'users' && authUser.roles?.includes('Admin') && <UsersView />}
           </>
         )}
       </main>

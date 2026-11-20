@@ -1,12 +1,37 @@
 const API_BASE = '/api'
+const AUTH_TOKEN_KEY = 'inventory.accessToken'
+const AUTH_USER_KEY = 'inventory.authUser'
+
+export function setAuthSession(session) {
+  sessionStorage.setItem(AUTH_TOKEN_KEY, session.accessToken)
+  sessionStorage.setItem(AUTH_USER_KEY, JSON.stringify(session.user))
+}
+
+export function clearAuthSession() {
+  sessionStorage.removeItem(AUTH_TOKEN_KEY)
+  sessionStorage.removeItem(AUTH_USER_KEY)
+}
+
+export function getAuthSession() {
+  const token = sessionStorage.getItem(AUTH_TOKEN_KEY)
+  if (!token) return null
+  try {
+    return { accessToken: token, user: JSON.parse(sessionStorage.getItem(AUTH_USER_KEY) || 'null') }
+  } catch {
+    clearAuthSession()
+    return null
+  }
+}
 
 async function request(endpoint, options = {}) {
+  const headers = new Headers(options.headers)
+  if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
+  const token = sessionStorage.getItem(AUTH_TOKEN_KEY)
+  if (token && !endpoint.startsWith('/auth/')) headers.set('Authorization', `Bearer ${token}`)
+
   const response = await fetch(`${API_BASE}${endpoint}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
     ...options,
+    headers,
   })
 
   if (response.status === 204) {
@@ -15,14 +40,26 @@ async function request(endpoint, options = {}) {
 
   const data = await response.json().catch(() => null)
 
+  if (response.status === 401 && token) clearAuthSession()
+
   if (!response.ok) {
-    throw new Error(data?.error || 'Erro ao comunicar com o servidor.')
+    const error = new Error(data?.error || 'Erro ao comunicar com o servidor.')
+    error.data = data
+    error.status = response.status
+    throw error
   }
 
   return data
 }
 
 export const api = {
+  getAuthStatus: () => request('/auth/status'),
+  setupAdmin: (payload) => request('/auth/setup', { method: 'POST', body: JSON.stringify(payload) }),
+  login: (payload) => request('/auth/login', { method: 'POST', body: JSON.stringify(payload) }),
+  getUsers: () => request('/users'),
+  createUser: (payload) => request('/users', { method: 'POST', body: JSON.stringify(payload) }),
+  deleteUser: (id) => request(`/users/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+
   getHealth: () => request('/health'),
 
   getDashboard: () => request('/dashboard'),

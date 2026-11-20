@@ -59,11 +59,19 @@ inventory-control/
    dotnet user-secrets init --project backend-dotnet/InventoryControl.Api
    dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=home_erp;Username=postgres;Password=SUA_SENHA" --project backend-dotnet/InventoryControl.Api
    ```
-2. Inicie a API:
+2. Gere segredos locais para a autenticação. A chave JWT deve ser aleatória e ter pelo menos 32 bytes; a chave de configuração inicial protege a criação da primeira conta:
+   ```powershell
+   $jwtKey = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(48))
+   $bootstrapKey = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
+   dotnet user-secrets set "Jwt:Key" $jwtKey --project backend-dotnet/InventoryControl.Api
+   dotnet user-secrets set "Auth:BootstrapKey" $bootstrapKey --project backend-dotnet/InventoryControl.Api
+   ```
+   Para recuperar apenas a chave usada na primeira tela, execute `dotnet user-secrets get "Auth:BootstrapKey" --project backend-dotnet/InventoryControl.Api`. Não compartilhe esses segredos nem os salve no Git.
+3. Inicie a API:
    ```powershell
    dotnet run --project backend-dotnet/InventoryControl.Api --launch-profile http
    ```
-   *A API estará em `http://localhost:5000`; teste `http://localhost:5000/api/health`.*
+   *A API estará em `http://localhost:5000`. Na primeira inicialização, uma migração cria as tabelas de autenticação no schema PostgreSQL `auth`; as tabelas de estoque atuais permanecem intactas.*
 
 ---
 
@@ -72,7 +80,7 @@ inventory-control/
    ```powershell
    npm.cmd run dev
    ```
-2. Abra `http://localhost:5173`. O Vite encaminha `/api` para a API ASP.NET Core na porta `5000`.
+2. Abra `http://localhost:5173`. O Vite encaminha `/api` para a API ASP.NET Core na porta `5000`. Na primeira abertura, informe a chave de configuração para criar a conta administradora. Depois, crie acessos adicionais pela aba **Usuários**.
 
 #### Abrir no celular com HTTPS durante o desenvolvimento
 

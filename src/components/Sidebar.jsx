@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { id: 'finance', label: 'Análise Financeira', icon: 'finance' },
   { id: 'movements', label: 'Movimentações', icon: 'movements' },
   { id: 'categories', label: 'Categorias', icon: 'categories' },
+  { id: 'users', label: 'Usuários', icon: 'users' },
 ]
 
 function NavIcon({ name }) {
@@ -69,10 +70,12 @@ export default function Sidebar({
   apiOnline,
   lowStockCount,
   onOpenNfeModal,
+  authUser,
+  onLogout,
 }) {
   const [moreOpen, setMoreOpen] = useState(false)
   const primaryItems = NAV_ITEMS.slice(0, 4)
-  const secondaryItems = NAV_ITEMS.slice(4)
+  const secondaryItems = NAV_ITEMS.slice(4).filter((item) => item.id !== 'users' || authUser?.roles?.includes('Admin'))
 
   function selectTab(id) {
     onSelectTab(id)
@@ -95,7 +98,7 @@ export default function Sidebar({
       </div>
 
       <nav className="sidebar-nav" aria-label="Menu principal">
-        {NAV_ITEMS.map((item) => {
+        {NAV_ITEMS.filter((item) => item.id !== 'users' || authUser?.roles?.includes('Admin')).map((item) => {
           const isActive = activeTab === item.id
           return (
             <button
@@ -136,6 +139,10 @@ export default function Sidebar({
             <small>{apiOnline ? 'Banco de dados conectado' : 'API offline'}</small>
           </div>
         </div>
+        <div className="sidebar-account">
+          <span>{authUser?.displayName}</span>
+          <button type="button" onClick={onLogout}>Sair</button>
+        </div>
       </div>
 
       <nav className="mobile-bottom-nav" aria-label="Navegação móvel">
@@ -156,6 +163,7 @@ export default function Sidebar({
         <div className="mobile-more-menu" id="mobile-more-menu">
           {secondaryItems.map((item) => <button key={item.id} type="button" onClick={() => selectTab(item.id)}><NavIcon name={item.icon} />{item.label}</button>)}
           <button type="button" onClick={openNfe}><span className="nfe-icon-pill">🧾</span>Importar Cupom / NF-e</button>
+          <button type="button" onClick={onLogout}>Sair da conta</button>
         </div>
       </>}
     </aside>
