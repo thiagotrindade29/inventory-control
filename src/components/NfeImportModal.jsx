@@ -531,7 +531,7 @@ export default function NfeImportModal({
                   <tbody>
                     {items.map((item) => (
                       <tr key={item.id}>
-                        <td>
+                        <td data-label="Produto / descrição">
                           <input
                             type="text"
                             className="input-inline"
@@ -551,7 +551,7 @@ export default function NfeImportModal({
                           </div>
                         </td>
 
-                        <td>
+                        <td data-label="Código / EAN">
                           <input
                             type="text"
                             className="input-inline mono"
@@ -561,7 +561,7 @@ export default function NfeImportModal({
                           />
                         </td>
 
-                        <td>
+                        <td data-label="Categoria">
                           <select
                             className="input-inline"
                             value={item.categoryId || ''}
@@ -575,7 +575,7 @@ export default function NfeImportModal({
                           </select>
                         </td>
 
-                        <td>
+                        <td data-label="Quantidade">
                           <div className="qty-unit-cell">
                             <input
                               type="number"
@@ -589,7 +589,7 @@ export default function NfeImportModal({
                           </div>
                         </td>
 
-                        <td>
+                        <td data-label="Preço unitário">
                           <input
                             type="number"
                             step="0.01"
@@ -600,13 +600,13 @@ export default function NfeImportModal({
                           />
                         </td>
 
-                        <td style={{ textAlign: 'right' }}>
+                        <td style={{ textAlign: 'right' }} data-label="Total">
                           <strong className="item-total-val">
                             R$ {Number(item.totalPrice).toFixed(2)}
                           </strong>
                         </td>
 
-                        <td>
+                        <td data-label="Remover">
                           <button
                             type="button"
                             className="btn-icon-danger"

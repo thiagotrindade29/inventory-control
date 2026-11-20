@@ -188,21 +188,21 @@ export default function DashboardView({
                   const meta = getMovementMeta(mov.type)
                   return (
                     <tr key={mov.id}>
-                      <td>{formatDateTime(mov.created_at)}</td>
-                      <td>
+                      <td data-label="Data e hora">{formatDateTime(mov.created_at)}</td>
+                      <td data-label="Produto">
                         <strong>{mov.product_name}</strong>
                       </td>
-                      <td>
+                      <td data-label="Tipo">
                         <span className={`badge ${meta.className}`}>{meta.label}</span>
                       </td>
-                      <td>
+                      <td data-label="Quantidade">
                         {meta.sign}
                         {formatNumber(mov.quantity)} {mov.product_unit}
                       </td>
-                      <td>
+                      <td data-label="Saldo">
                         {formatNumber(mov.previous_quantity)} → <strong>{formatNumber(mov.new_quantity)}</strong>
                       </td>
-                      <td className="text-muted">{mov.reason || '—'}</td>
+                      <td className="text-muted" data-label="Motivo">{mov.reason || '—'}</td>
                     </tr>
                   )
                 })}

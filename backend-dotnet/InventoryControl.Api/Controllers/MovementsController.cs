@@ -55,7 +55,7 @@ public class MovementsController : ControllerBase
 
     public class CreateMovementInput
     {
-        public int ProductId { get; set; }
+        public int Product_Id { get; set; }
         public string Type { get; set; } = "IN"; // 'IN' ou 'OUT'
         public decimal Quantity { get; set; }
         public string? Reason { get; set; }
@@ -65,9 +65,17 @@ public class MovementsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateMovement([FromBody] CreateMovementInput input)
     {
-        var product = await _context.Products.FindAsync(input.ProductId);
+        if (input.Quantity <= 0)
+            return BadRequest(new { error = "A quantidade deve ser maior que zero." });
+        if (input.Type is not ("IN" or "OUT"))
+            return BadRequest(new { error = "O tipo deve ser IN ou OUT." });
+
+        var product = await _context.Products.FindAsync(input.Product_Id);
         if (product == null)
             return NotFound(new { error = "Produto não encontrado." });
+
+        if (input.Type == "OUT" && input.Quantity > product.Quantity)
+            return BadRequest(new { error = "Saldo insuficiente para essa saída." });
 
         var previousStock = product.Quantity;
         decimal delta = input.Type.ToUpper() == "OUT" ? -input.Quantity : input.Quantity;

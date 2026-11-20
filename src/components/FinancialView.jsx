@@ -255,7 +255,7 @@ export default function FinancialView({ financialData, onRefresh, onNavigate }) 
                       setSelectedPurchaseId(isSelected ? null : pur.id)
                     }
                   >
-                    <td>
+                    <td data-label="Data">
                       {new Date(pur.created_at).toLocaleDateString('pt-BR', {
                         day: '2-digit',
                         month: '2-digit',
@@ -264,16 +264,16 @@ export default function FinancialView({ financialData, onRefresh, onNavigate }) 
                         minute: '2-digit',
                       })}
                     </td>
-                    <td>
+                    <td data-label="Estabelecimento">
                       <strong>{pur.store_name}</strong>
                     </td>
-                    <td>{pur.notes || '-'}</td>
-                    <td>
+                    <td data-label="Observações">{pur.notes || '-'}</td>
+                    <td data-label="Itens">
                       <span className="badge-pill">
                         {pur.items_count || 0} itens ({Number(pur.total_items || 0).toFixed(1)} un)
                       </span>
                     </td>
-                    <td style={{ textAlign: 'right' }}>
+                    <td style={{ textAlign: 'right' }} data-label="Total pago">
                       <strong className="text-primary">
                         R${' '}
                         {Number(pur.total_amount).toLocaleString('pt-BR', {
@@ -282,7 +282,7 @@ export default function FinancialView({ financialData, onRefresh, onNavigate }) 
                         })}
                       </strong>
                     </td>
-                    <td>
+                    <td data-label="Ação">
                       <button
                         type="button"
                         className={`btn btn-sm ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
@@ -405,13 +405,13 @@ export default function FinancialView({ financialData, onRefresh, onNavigate }) 
 
                   return (
                     <tr key={item.id}>
-                      <td>
+                      <td data-label="Código / SKU">
                         <span className="mono-code">{item.barcode || '-'}</span>
                       </td>
-                      <td>
+                      <td data-label="Descrição do item">
                         <strong>{item.product_name}</strong>
                       </td>
-                      <td>
+                      <td data-label="Categoria">
                         {item.category_name && (
                           <span
                             className="pill-badge"
@@ -425,16 +425,16 @@ export default function FinancialView({ financialData, onRefresh, onNavigate }) 
                           </span>
                         )}
                       </td>
-                      <td style={{ textAlign: 'center' }}>
+                      <td style={{ textAlign: 'center' }} data-label="Quantidade">
                         <strong>{item.quantity}</strong>
                       </td>
-                      <td style={{ textAlign: 'right' }}>
+                      <td style={{ textAlign: 'right' }} data-label="Preço mês anterior">
                         {prevPrice > 0 ? `R$ ${prevPrice.toFixed(2)}` : '-'}
                       </td>
-                      <td style={{ textAlign: 'right' }}>
+                      <td style={{ textAlign: 'right' }} data-label="Preço atual">
                         <strong>R$ {unitPrice.toFixed(2)}</strong>
                       </td>
-                      <td style={{ textAlign: 'center' }}>
+                      <td style={{ textAlign: 'center' }} data-label="Variação">
                         {diff > 0.005 ? (
                           <span className="compare-badge badge-danger">
                             +{varPct.toFixed(1)}% (+R$ {diff.toFixed(2)})
@@ -447,7 +447,7 @@ export default function FinancialView({ financialData, onRefresh, onNavigate }) 
                           <span className="compare-badge badge-neutral">0.0% (Igual)</span>
                         )}
                       </td>
-                      <td style={{ textAlign: 'right' }}>
+                      <td style={{ textAlign: 'right' }} data-label="Total">
                         <strong>R$ {total.toFixed(2)}</strong>
                       </td>
                     </tr>

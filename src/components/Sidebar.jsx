@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Visão Geral', icon: 'dashboard' },
   { id: 'products', label: 'Produtos', icon: 'products' },
@@ -68,6 +70,20 @@ export default function Sidebar({
   lowStockCount,
   onOpenNfeModal,
 }) {
+  const [moreOpen, setMoreOpen] = useState(false)
+  const primaryItems = NAV_ITEMS.slice(0, 4)
+  const secondaryItems = NAV_ITEMS.slice(4)
+
+  function selectTab(id) {
+    onSelectTab(id)
+    setMoreOpen(false)
+  }
+
+  function openNfe() {
+    onOpenNfeModal()
+    setMoreOpen(false)
+  }
+
   return (
     <aside className="erp-sidebar">
       <div className="sidebar-brand">
@@ -117,10 +133,31 @@ export default function Sidebar({
           <span className="status-dot" />
           <div>
             <strong>{apiOnline ? 'PostgreSQL Conectado' : 'API Offline'}</strong>
-            <small>{apiOnline ? 'Porta 5432 • home_erp' : 'Inicie o backend em /server'}</small>
+            <small>{apiOnline ? 'Banco de dados conectado' : 'API offline'}</small>
           </div>
         </div>
       </div>
+
+      <nav className="mobile-bottom-nav" aria-label="Navegação móvel">
+        {primaryItems.map((item) => (
+          <button key={item.id} type="button" className={`mobile-nav-item ${activeTab === item.id ? 'active' : ''}`} onClick={() => selectTab(item.id)}>
+            <NavIcon name={item.icon} />
+            <span>{item.id === 'dashboard' ? 'Início' : item.id === 'market' ? 'Mercado' : item.id === 'finance' ? 'Finanças' : item.label}</span>
+            {item.id === 'products' && lowStockCount > 0 && <span className="mobile-nav-badge">{lowStockCount}</span>}
+          </button>
+        ))}
+        <button type="button" className={`mobile-nav-item ${moreOpen || secondaryItems.some((item) => activeTab === item.id) ? 'active' : ''}`} aria-expanded={moreOpen} aria-controls="mobile-more-menu" onClick={() => setMoreOpen((open) => !open)}>
+          <NavIcon name="categories" />
+          <span>Mais</span>
+        </button>
+      </nav>
+      {moreOpen && <>
+        <button className="mobile-more-backdrop" type="button" aria-label="Fechar menu" onClick={() => setMoreOpen(false)} />
+        <div className="mobile-more-menu" id="mobile-more-menu">
+          {secondaryItems.map((item) => <button key={item.id} type="button" onClick={() => selectTab(item.id)}><NavIcon name={item.icon} />{item.label}</button>)}
+          <button type="button" onClick={openNfe}><span className="nfe-icon-pill">🧾</span>Importar Cupom / NF-e</button>
+        </div>
+      </>}
     </aside>
   )
 }

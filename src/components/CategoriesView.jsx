@@ -142,7 +142,7 @@ export default function CategoriesView({ categories, onCreate, onUpdate, onDelet
                 <tbody>
                   {categories.map((cat) => (
                     <tr key={cat.id}>
-                      <td>
+                      <td data-label="Categoria">
                         <span
                           className="category-chip"
                           style={{ '--chip-color': cat.color || '#3b82f6' }}
@@ -150,11 +150,11 @@ export default function CategoriesView({ categories, onCreate, onUpdate, onDelet
                           {cat.name}
                         </span>
                       </td>
-                      <td className="text-muted">{cat.description || '—'}</td>
-                      <td>
+                      <td className="text-muted" data-label="Descrição">{cat.description || '—'}</td>
+                      <td data-label="Produtos">
                         <strong>{cat.product_count}</strong>
                       </td>
-                      <td className="text-right">
+                      <td className="text-right" data-label="Ações">
                         <div className="row-actions">
                           <button
                             type="button"
