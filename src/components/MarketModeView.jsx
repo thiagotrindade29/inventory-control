@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import BarcodeScannerModal from './BarcodeScannerModal.jsx'
 import NfeImportModal from './NfeImportModal.jsx'
 
 export default function MarketModeView({
@@ -14,6 +15,8 @@ export default function MarketModeView({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [finishedSummary, setFinishedSummary] = useState(null)
   const [nfeModalOpen, setNfeModalOpen] = useState(false)
+  const [scannerOpen, setScannerOpen] = useState(false)
+  const [scanFeedback, setScanFeedback] = useState(null)
 
   // Itens em estoque baixo para recomendação de reposição
   const lowStockProducts = useMemo(() => {
@@ -68,6 +71,53 @@ export default function MarketModeView({
     setSearchQuery('')
   }
 
+  // Tratador do leitor de código de barras pela câmera
+  function handleBarcodeScanned(barcode) {
+    setScannerOpen(false)
+    const cleanBarcode = barcode.trim()
+
+    // Procura o produto no catálogo
+    const matched = products.find(
+      (p) =>
+        (p.barcode && p.barcode.trim() === cleanBarcode) ||
+        (p.sku && p.sku.trim() === cleanBarcode)
+    )
+
+    if (matched) {
+      handleAddToCart(matched)
+      setScanFeedback({
+        type: 'found',
+        message: `✅ "${matched.name}" adicionado ao carrinho! Preço anterior: R$ ${Number(matched.unit_price || 0).toFixed(2)}`,
+      })
+    } else {
+      // Produto novo/inédito
+      setCartItems((prev) => [
+        ...prev,
+        {
+          id: `item-${Date.now()}-${Math.random()}`,
+          product_id: null,
+          name: '',
+          barcode: cleanBarcode,
+          category_id: categories[0]?.id || null,
+          category_name: categories[0]?.name || 'Geral',
+          category_color: categories[0]?.color || '#3b82f6',
+          quantity: 1,
+          unit_price: 0,
+          previous_unit_price: 0,
+          unit: 'un',
+        },
+      ])
+      setScanFeedback({
+        type: 'new',
+        message: `🆕 Novo código de barras lido (${cleanBarcode})! Preencha o nome e preço do item.`,
+      })
+    }
+
+    setTimeout(() => {
+      setScanFeedback(null)
+    }, 5000)
+  }
+
   // Carregar todos os itens com estoque baixo de 1 clique
   function handleLoadLowStock() {
     const newItems = []
@@ -99,7 +149,7 @@ export default function MarketModeView({
     }
   }
 
-  // Adicionar produto avulso novo (que ainda não está cadastrado)
+  // Adicionar produto avulso novo
   function handleAddNewItem() {
     if (!searchQuery.trim()) return
 
@@ -138,7 +188,7 @@ export default function MarketModeView({
     setCartItems((prev) => prev.filter((it) => it.id !== id))
   }
 
-  // Cálculos dinâmicos do carrinho
+  // Cálculos dinâmicos do carrinho em tempo real
   const cartTotals = useMemo(() => {
     let totalValue = 0
     let totalUnits = 0
@@ -165,9 +215,16 @@ export default function MarketModeView({
     }
   }, [cartItems])
 
-  // Finalizar compra e enviar para o banco
+  // Finalizar compra e persistir atomicamente no banco C#
   async function handleSubmitPurchase() {
     if (cartItems.length === 0) return
+
+    // Validar se todos os itens têm nome
+    const emptyNames = cartItems.filter((i) => !i.name || !i.name.trim())
+    if (emptyNames.length > 0) {
+      alert('Por favor, informe o nome de todos os produtos do carrinho antes de finalizar.')
+      return
+    }
 
     setIsSubmitting(true)
     try {
@@ -202,12 +259,13 @@ export default function MarketModeView({
 
   return (
     <div className="market-mode-view">
+      {/* Cabeçalho da Visão */}
       <div className="view-header">
         <div>
           <h2>🛒 Modo Mercado (Assistente em Tempo Real)</h2>
           <p>
-            Monitore seu carrinho de compras no supermercado, compare preços na prateleira com o mês
-            anterior e atualize seu estoque e gastos com 1 clique!
+            Monitore seu carrinho de compras no celular, compare preços na prateleira com o mês
+            anterior e calcule seu gasto total antes do caixa!
           </p>
         </div>
 
@@ -234,19 +292,27 @@ export default function MarketModeView({
         </div>
       </div>
 
+      {/* Banner de Feedback de Leitura de Câmera */}
+      {scanFeedback && (
+        <div
+          className={`scan-feedback-banner ${scanFeedback.type === 'found' ? 'feedback-success' : 'feedback-new'}`}
+        >
+          {scanFeedback.message}
+        </div>
+      )}
+
+      {/* Banner de Sucesso pós Compra */}
       {finishedSummary && (
         <div className="market-success-banner">
           <div className="banner-icon">🎉</div>
           <div className="banner-content">
             <h4>Compra Finalizada com Sucesso!</h4>
             <p>
-              Registrada em <strong>{finishedSummary.storeName}</strong> no valor total de{' '}
-              <strong>
-                R$ {Number(finishedSummary.totalAmount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </strong>{' '}
-              ({finishedSummary.itemsCount} itens / {finishedSummary.totalUnits} unidades).
-              O estoque e o histórico financeiro foram atualizados automaticamente.
+              Registrada em <strong>{finishedSummary.storeName}</strong> • Total de{' '}
+              <strong>R$ {Number(finishedSummary.totalAmount).toFixed(2)}</strong> em{' '}
+              {finishedSummary.itemsCount} itens ({finishedSummary.totalUnits} unidades).
             </p>
+            <small>O estoque e o histórico financeiro foram atualizados automaticamente.</small>
           </div>
           <div className="banner-actions">
             <button
@@ -254,7 +320,7 @@ export default function MarketModeView({
               className="btn btn-primary"
               onClick={() => onNavigate('finance')}
             >
-              Ver na Análise Financeira 📈
+              Ver Relatório Financeiro
             </button>
             <button
               type="button"
@@ -267,313 +333,337 @@ export default function MarketModeView({
         </div>
       )}
 
-      {/* Barra de Configurações da Compra */}
+      {/* Dados do Estabelecimento */}
       <div className="market-store-bar">
         <div className="form-group flex-1">
-          <label htmlFor="store-name-input">Local / Supermercado</label>
+          <label>Local / Supermercado</label>
           <input
-            id="store-name-input"
             type="text"
             className="input-field"
             value={storeName}
             onChange={(e) => setStoreName(e.target.value)}
-            placeholder="Ex: Supermercado São Jorge, Atacadão, Feira..."
+            placeholder="Ex: Carrefour, Pão de Açúcar, Açougue..."
           />
         </div>
-
         <div className="form-group flex-2">
-          <label htmlFor="store-notes-input">Observações / Nota Fiscal</label>
+          <label>Observações / Nota Fiscal</label>
           <input
-            id="store-notes-input"
             type="text"
             className="input-field"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Ex: Compra quinzenal, itens da feira, cupom fiscal #1234..."
+            placeholder="Ex: Compra quinzenal, itens para o churrasco..."
           />
         </div>
       </div>
 
-      {/* Barra de Busca e Inclusão Rápida */}
-      <div className="market-search-box">
-        <div className="search-input-wrapper">
-          <span className="search-icon">🔍</span>
-          <input
-            type="text"
-            className="input-field market-search-input"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                if (filteredCatalog.length > 0) {
-                  handleAddToCart(filteredCatalog[0])
-                } else if (searchQuery.trim()) {
-                  handleAddNewItem()
+      {/* Barra de Busca + Botão de Câmera para Smartphone */}
+      <div className="market-search-container">
+        <div className="market-search-box">
+          <div className="search-input-wrapper">
+            <span className="search-icon">🔍</span>
+            <input
+              type="text"
+              className="input-field market-search-input"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  if (filteredCatalog.length > 0) {
+                    handleAddToCart(filteredCatalog[0])
+                  } else if (searchQuery.trim()) {
+                    handleAddNewItem()
+                  }
                 }
-              }
-            }}
-            placeholder="Escaneie o código de barras ou digite o nome do produto..."
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              className="clear-search-btn"
-              onClick={() => setSearchQuery('')}
-            >
-              ✕
-            </button>
-          )}
-        </div>
-
-        {/* Dropdown de Resultados da Pesquisa */}
-        {searchQuery.trim() && (
-          <div className="market-autocomplete-dropdown">
-            {filteredCatalog.length > 0 ? (
-              filteredCatalog.map((prod) => (
-                <button
-                  key={prod.id}
-                  type="button"
-                  className="autocomplete-item"
-                  onClick={() => handleAddToCart(prod)}
-                >
-                  <div className="item-main">
-                    <strong>{prod.name}</strong>
-                    <small>
-                      {prod.barcode ? `Código: ${prod.barcode} • ` : ''}
-                      Estoque Atual: {prod.quantity} {prod.unit}
-                    </small>
-                  </div>
-                  <div className="item-price">
-                    <span>
-                      R$ {Number(prod.unit_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </span>
-                    <span className="btn-add-badge">+ Adicionar</span>
-                  </div>
-                </button>
-              ))
-            ) : (
-              <div className="autocomplete-empty">
-                <span>Nenhum produto cadastrado com esse nome.</span>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-primary"
-                  onClick={handleAddNewItem}
-                >
-                  + Adicionar "{searchQuery}" como Novo Produto
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Lista do Carrinho de Compras */}
-      <div className="market-cart-container">
-        {cartItems.length === 0 ? (
-          <div className="empty-cart-state">
-            <div className="empty-cart-icon">🛒</div>
-            <h3>Seu carrinho de compras está vazio</h3>
-            <p>
-              Use a barra de pesquisa acima para escanear ou adicionar produtos, ou clique no botão
-              de <strong>Repor Estoque Baixo</strong> para carregar os itens que estão faltando em
-              casa.
-            </p>
-            {lowStockProducts.length > 0 && (
+              }}
+              placeholder="Digite o nome ou código de barras do produto..."
+            />
+            {searchQuery && (
               <button
                 type="button"
-                className="btn btn-primary"
-                onClick={handleLoadLowStock}
+                className="clear-search-btn"
+                onClick={() => setSearchQuery('')}
               >
-                Carregar {lowStockProducts.length} itens com estoque baixo
+                ✕
               </button>
             )}
           </div>
-        ) : (
-          <div className="cart-table-wrapper">
-            <table className="erp-table cart-table">
-              <thead>
-                <tr>
-                  <th>Produto / Código</th>
-                  <th style={{ width: '130px' }}>Qtd</th>
-                  <th style={{ width: '150px' }}>Preço Prateleira</th>
-                  <th>Comparativo Preço Anterior</th>
-                  <th style={{ width: '140px', textAlign: 'right' }}>Subtotal</th>
-                  <th style={{ width: '60px' }}></th>
-                </tr>
-              </thead>
-              <tbody>
-                {cartItems.map((item) => {
-                  const unitPrice = Number(item.unit_price) || 0
-                  const prevPrice = Number(item.previous_unit_price) || 0
-                  const qty = Number(item.quantity) || 1
-                  const subtotal = qty * unitPrice
-                  const priceDiff = unitPrice - prevPrice
-                  const varPct = prevPrice > 0 ? (priceDiff / prevPrice) * 100 : 0
 
-                  return (
-                    <tr key={item.id} className="cart-row">
-                      <td>
-                        <div className="cart-product-cell">
-                          <strong>{item.name}</strong>
-                          <div className="cart-product-meta">
-                            {item.category_name && (
-                              <span
-                                className="pill-badge"
-                                style={{
-                                  backgroundColor: `${item.category_color}22`,
-                                  color: item.category_color,
-                                  borderColor: item.category_color,
-                                }}
-                              >
-                                {item.category_name}
-                              </span>
-                            )}
-                            {item.barcode && <small className="barcode-tag">🏷️ {item.barcode}</small>}
-                          </div>
-                        </div>
-                      </td>
+          {/* Dropdown de Resultados da Pesquisa */}
+          {searchQuery.trim() && (
+            <div className="market-autocomplete-dropdown">
+              {filteredCatalog.length > 0 ? (
+                filteredCatalog.map((prod) => (
+                  <button
+                    key={prod.id}
+                    type="button"
+                    className="autocomplete-item"
+                    onClick={() => handleAddToCart(prod)}
+                  >
+                    <div className="item-main">
+                      <strong>{prod.name}</strong>
+                      <small>
+                        {prod.barcode ? `Código: ${prod.barcode} • ` : ''}
+                        Estoque Atual: {prod.quantity} {prod.unit}
+                      </small>
+                    </div>
+                    <div className="item-price">
+                      <span>
+                        R${' '}
+                        {Number(prod.unit_price || 0).toLocaleString('pt-BR', {
+                          minimumFractionDigits: 2,
+                        })}
+                      </span>
+                      <span className="btn-add-badge">+ Adicionar</span>
+                    </div>
+                  </button>
+                ))
+              ) : (
+                <div className="autocomplete-empty">
+                  <span>Nenhum produto cadastrado com esse nome.</span>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-primary"
+                    onClick={handleAddNewItem}
+                  >
+                    + Adicionar &quot;{searchQuery}&quot; como Novo Item
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
-                      <td>
-                        <div className="qty-counter">
-                          <button
-                            type="button"
-                            className="qty-btn"
-                            onClick={() =>
-                              handleUpdateItem(item.id, 'quantity', Math.max(1, qty - 1))
-                            }
-                          >
-                            -
-                          </button>
-                          <input
-                            type="number"
-                            min="0.1"
-                            step="any"
-                            className="qty-input"
-                            value={item.quantity}
-                            onChange={(e) => handleUpdateItem(item.id, 'quantity', e.target.value)}
-                          />
-                          <button
-                            type="button"
-                            className="qty-btn"
-                            onClick={() => handleUpdateItem(item.id, 'quantity', qty + 1)}
-                          >
-                            +
-                          </button>
-                        </div>
-                      </td>
+        {/* Botão de Câmera em Destaque para o Mercado */}
+        <button
+          type="button"
+          className="btn btn-camera-scan"
+          onClick={() => setScannerOpen(true)}
+          title="Abrir câmera do celular para bipar código de barras"
+        >
+          <span className="camera-icon">📷</span>
+          <span className="camera-label">Escanear com Câmera</span>
+        </button>
+      </div>
 
-                      <td>
-                        <div className="price-input-wrapper">
-                          <span className="currency-prefix">R$</span>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            className="price-input"
-                            value={item.unit_price}
-                            onChange={(e) => handleUpdateItem(item.id, 'unit_price', e.target.value)}
-                          />
-                        </div>
-                      </td>
-
-                      <td>
-                        <div className="price-compare-cell">
-                          {prevPrice > 0 ? (
-                            <>
-                              <div className="prev-price-label">
-                                Anterior: R$ {prevPrice.toFixed(2)}
-                              </div>
-                              {priceDiff > 0.01 ? (
-                                <span className="compare-badge badge-danger" title={`Subiu R$ ${priceDiff.toFixed(2)} por unidade`}>
-                                  🔴 +{varPct.toFixed(1)}% (+R$ {priceDiff.toFixed(2)})
-                                </span>
-                              ) : priceDiff < -0.01 ? (
-                                <span className="compare-badge badge-success" title={`Economia de R$ ${Math.abs(priceDiff).toFixed(2)} por unidade`}>
-                                  🟢 {varPct.toFixed(1)}% (-R$ {Math.abs(priceDiff).toFixed(2)})
-                                </span>
-                              ) : (
-                                <span className="compare-badge badge-neutral">
-                                  🟡 Mesmo Preço
-                                </span>
-                              )}
-                            </>
-                          ) : (
-                            <span className="compare-badge badge-new">
-                              🆕 Novo Produto
-                            </span>
-                          )}
-                        </div>
-                      </td>
-
-                      <td style={{ textAlign: 'right' }}>
-                        <strong className="cart-subtotal">
-                          R$ {subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </strong>
-                      </td>
-
-                      <td>
-                        <button
-                          type="button"
-                          className="btn-icon-danger"
-                          title="Remover do carrinho"
-                          onClick={() => handleRemoveItem(item.id)}
-                        >
-                          🗑️
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+      {/* Calculadora de Carrinho em Tempo Real */}
+      <div className="market-cart-container">
+        {cartItems.length === 0 ? (
+          <div className="empty-cart-state">
+            <span className="empty-cart-icon">🛒</span>
+            <h3>Seu carrinho de compras está vazio</h3>
+            <p>
+              Use a barra de pesquisa ou clique em <strong>Escanear com Câmera</strong> para bipar produtos na prateleira, ou carregue os itens que estão acabando em casa.
+            </p>
+            <div className="empty-cart-actions">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setScannerOpen(true)}
+              >
+                📷 Abrir Câmera do Celular
+              </button>
+              {lowStockProducts.length > 0 && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleLoadLowStock}
+                >
+                  ⚡ Carregar {lowStockProducts.length} itens com estoque baixo
+                </button>
+              )}
+            </div>
           </div>
+        ) : (
+          <>
+            {/* Barra de Resumo Financeiro ao Vivo */}
+            <div className="cart-live-summary">
+              <div className="summary-col">
+                <span className="summary-label">Itens no Carrinho</span>
+                <strong className="summary-value">
+                  {cartItems.length} itens ({cartTotals.totalUnits} un)
+                </strong>
+              </div>
+
+              <div className="summary-col">
+                <span className="summary-label">Total a Pagar no Caixa</span>
+                <strong className="summary-value total-highlight">
+                  R${' '}
+                  {cartTotals.totalValue.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </strong>
+              </div>
+
+              <div className="summary-col">
+                <span className="summary-label">Comparativo com Mês Anterior</span>
+                <div className="price-diff-indicator">
+                  {cartTotals.diff < -0.01 ? (
+                    <span className="badge badge-success">
+                      🟢 Economia de R$ {Math.abs(cartTotals.diff).toFixed(2)} (
+                      {Math.abs(cartTotals.variationPct).toFixed(1)}%)
+                    </span>
+                  ) : cartTotals.diff > 0.01 ? (
+                    <span className="badge badge-danger">
+                      🔴 Mais caro em R$ {cartTotals.diff.toFixed(2)} (+
+                      {cartTotals.variationPct.toFixed(1)}%)
+                    </span>
+                  ) : (
+                    <span className="badge badge-info">🟡 Preço estável (0%)</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="summary-actions">
+                <button
+                  type="button"
+                  className="btn btn-success btn-lg btn-finish-cart"
+                  disabled={isSubmitting}
+                  onClick={handleSubmitPurchase}
+                >
+                  {isSubmitting ? 'Salvando no Banco...' : '✓ Finalizar Compra'}
+                </button>
+              </div>
+            </div>
+
+            {/* Lista de Itens do Carrinho */}
+            <div className="table-wrap">
+              <table className="erp-table">
+                <thead>
+                  <tr>
+                    <th>Produto</th>
+                    <th>Qtd.</th>
+                    <th>Preço Unit. Prateleira</th>
+                    <th>Preço Anterior</th>
+                    <th>Subtotal</th>
+                    <th>Variação</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cartItems.map((item) => {
+                    const price = Number(item.unit_price) || 0
+                    const prevPrice = Number(item.previous_unit_price) || 0
+                    const subtotal = (Number(item.quantity) || 0) * price
+
+                    let diffPercent = 0
+                    if (prevPrice > 0 && price > 0) {
+                      diffPercent = ((price - prevPrice) / prevPrice) * 100
+                    }
+
+                    return (
+                      <tr key={item.id}>
+                        <td>
+                          {item.product_id ? (
+                            <div className="product-cell">
+                              <strong>{item.name}</strong>
+                              <small>
+                                {item.barcode ? `EAN: ${item.barcode} • ` : ''}
+                                {item.category_name}
+                              </small>
+                            </div>
+                          ) : (
+                            <div className="new-item-inputs">
+                              <input
+                                type="text"
+                                className="input-field input-sm"
+                                placeholder="Nome do produto novo..."
+                                value={item.name}
+                                onChange={(e) =>
+                                  handleUpdateItem(item.id, 'name', e.target.value)
+                                }
+                              />
+                              <small className="badge-new-item">
+                                🆕 Novo Item • Código: {item.barcode || 'Sem código'}
+                              </small>
+                            </div>
+                          )}
+                        </td>
+
+                        <td style={{ width: '110px' }}>
+                          <input
+                            type="number"
+                            step="any"
+                            min="0.01"
+                            className="input-field input-sm text-center"
+                            value={item.quantity}
+                            onChange={(e) =>
+                              handleUpdateItem(item.id, 'quantity', e.target.value)
+                            }
+                          />
+                        </td>
+
+                        <td style={{ width: '130px' }}>
+                          <div className="input-currency-wrapper">
+                            <span>R$</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              className="input-field input-sm"
+                              value={item.unit_price}
+                              onChange={(e) =>
+                                handleUpdateItem(item.id, 'unit_price', e.target.value)
+                              }
+                            />
+                          </div>
+                        </td>
+
+                        <td>
+                          <span className="text-muted">
+                            {prevPrice > 0 ? `R$ ${prevPrice.toFixed(2)}` : '—'}
+                          </span>
+                        </td>
+
+                        <td>
+                          <strong>R$ {subtotal.toFixed(2)}</strong>
+                        </td>
+
+                        <td>
+                          {prevPrice === 0 ? (
+                            <span className="badge badge-info">Novo</span>
+                          ) : diffPercent < -0.5 ? (
+                            <span className="badge badge-success">
+                              🟢 {diffPercent.toFixed(1)}%
+                            </span>
+                          ) : diffPercent > 0.5 ? (
+                            <span className="badge badge-danger">
+                              🔴 +{diffPercent.toFixed(1)}%
+                            </span>
+                          ) : (
+                            <span className="badge badge-info">🟡 Igual</span>
+                          )}
+                        </td>
+
+                        <td>
+                          <button
+                            type="button"
+                            className="btn btn-xs btn-danger"
+                            onClick={() => handleRemoveItem(item.id)}
+                            title="Remover do carrinho"
+                          >
+                            ✕
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
-      {/* Barra de Resumo e Finalização de Compra */}
-      {cartItems.length > 0 && (
-        <div className="market-checkout-bar">
-          <div className="checkout-stat">
-            <span className="stat-label">Total de Itens</span>
-            <strong className="stat-val">
-              {cartItems.length} itens ({cartTotals.totalUnits} un)
-            </strong>
-          </div>
+      {/* Modal Leitor de Código de Barras por Câmera */}
+      <BarcodeScannerModal
+        isOpen={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScanSuccess={handleBarcodeScanned}
+      />
 
-          <div className="checkout-stat">
-            <span className="stat-label">Variação Estimada</span>
-            <strong
-              className={`stat-val ${
-                cartTotals.diff > 0.05
-                  ? 'text-danger'
-                  : cartTotals.diff < -0.05
-                  ? 'text-success'
-                  : 'text-neutral'
-              }`}
-            >
-              {cartTotals.diff > 0.05 ? '+' : ''}
-              R$ {cartTotals.diff.toFixed(2)} ({cartTotals.variationPct.toFixed(1)}%)
-            </strong>
-          </div>
-
-          <div className="checkout-total-box">
-            <span className="stat-label">Total a Pagar no Caixa</span>
-            <span className="checkout-total-val">
-              R$ {cartTotals.totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </span>
-          </div>
-
-          <button
-            type="button"
-            className="btn btn-success btn-lg btn-finish-purchase"
-            disabled={isSubmitting || cartTotals.totalValue <= 0}
-            onClick={handleSubmitPurchase}
-          >
-            {isSubmitting ? 'Processando...' : '🛒 Finalizar Compra e Atualizar Estoque'}
-          </button>
-        </div>
-      )}
-
+      {/* Modal Importador de NF-e */}
       {nfeModalOpen && (
         <NfeImportModal
           categories={categories}
@@ -584,12 +674,12 @@ export default function MarketModeView({
               storeName: result.store_name,
               totalAmount: result.total_amount,
               itemsCount: payload.items.length,
-              totalUnits: payload.items.reduce((acc, it) => acc + (Number(it.quantity) || 0), 0),
+              totalUnits: payload.items.reduce((s, i) => s + Number(i.quantity), 0),
             })
+            setNfeModalOpen(false)
           }}
         />
       )}
     </div>
   )
 }
-

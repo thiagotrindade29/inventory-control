@@ -1842,3 +1842,216 @@
 }
 
 
+
+
+/* ==========================================================================
+   SCANNER DE CÂMERA & MODO MERCADO MOBILE
+   ========================================================================== */
+.market-search-container {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.market-search-container .market-search-box {
+  flex: 1 1 320px;
+  margin-bottom: 0 !important;
+}
+
+.btn-camera-scan {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #ffffff !important;
+  font-weight: 700;
+  border-radius: 12px;
+  height: 48px;
+  padding: 0 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-camera-scan:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+}
+
+.camera-icon {
+  font-size: 1.25rem;
+}
+
+/* Modal do Scanner */
+.scanner-modal {
+  max-width: 520px !important;
+  width: 95% !important;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.scanner-viewport-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #000;
+}
+
+.scanner-video-box {
+  width: 100%;
+  min-height: 280px;
+}
+
+.scanner-video-box video {
+  width: 100% !important;
+  height: auto !important;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+.scanner-aim-guide {
+  position: absolute;
+  inset: 20px;
+  border: 2px dashed rgba(16, 185, 129, 0.8);
+  border-radius: 12px;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
+}
+
+.aim-laser {
+  width: 90%;
+  height: 2px;
+  background: #ef4444;
+  box-shadow: 0 0 8px #ef4444;
+  animation: laserScan 2s infinite ease-in-out alternate;
+}
+
+@keyframes laserScan {
+  0% { transform: translateY(-70px); opacity: 0.6; }
+  100% { transform: translateY(70px); opacity: 1; }
+}
+
+.scanner-hint {
+  display: block;
+  margin-top: 12px;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.scanner-error-box {
+  padding: 30px 16px;
+  text-align: center;
+}
+
+.scanner-error-box .error-icon {
+  font-size: 2.2rem;
+  display: block;
+  margin-bottom: 12px;
+}
+
+/* Feedback de Leitura */
+.scan-feedback-banner {
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 20px;
+  animation: slideDown 0.3s ease-out;
+}
+
+.feedback-success {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #10b981;
+}
+
+.feedback-new {
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #3b82f6;
+}
+
+/* Barra de Resumo do Carrinho em Tempo Real */
+.cart-live-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px 24px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.summary-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.summary-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  color: #64748b;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.summary-value {
+  font-size: 1.25rem;
+  color: #0f172a;
+}
+
+.summary-value.total-highlight {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: #2563eb;
+  letter-spacing: -0.5px;
+}
+
+.btn-finish-cart {
+  padding: 14px 28px !important;
+  font-size: 1.05rem !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35) !important;
+}
+
+.input-currency-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0 8px;
+}
+
+.input-currency-wrapper span {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.input-currency-wrapper input {
+  border: none !important;
+  background: transparent !important;
+  padding: 6px 4px !important;
+  width: 80px;
+}
+
+.badge-new-item {
+  color: #2563eb;
+  font-weight: 600;
+  font-size: 0.75rem;
+}
