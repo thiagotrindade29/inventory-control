@@ -14,6 +14,7 @@ public class AppDbContext : DbContext
     public DbSet<Purchase> Purchases => Set<Purchase>();
     public DbSet<PurchaseItem> PurchaseItems => Set<PurchaseItem>();
     public DbSet<StockMovement> StockMovements => Set<StockMovement>();
+    public DbSet<ProductIdentifier> ProductIdentifiers => Set<ProductIdentifier>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -97,6 +98,19 @@ public class AppDbContext : DbContext
             entity.Property(e => e.NewQuantity).HasColumnName("new_quantity").HasPrecision(10, 2);
             entity.Property(e => e.Reason).HasColumnName("reason").HasMaxLength(160);
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+        });
+
+        modelBuilder.Entity<ProductIdentifier>(entity =>
+        {
+            entity.ToTable("product_identifiers");
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.ProductId).HasColumnName("product_id");
+            entity.Property(e => e.MarketName).HasColumnName("market_name").IsRequired().HasMaxLength(120);
+            entity.Property(e => e.Code).HasColumnName("code").IsRequired().HasMaxLength(80);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.HasIndex(e => new { e.MarketName, e.Code }).IsUnique();
+            entity.HasOne<Product>().WithMany(p => p.Identifiers)
+                .HasForeignKey(e => e.ProductId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

@@ -3,6 +3,9 @@ using InventoryControl.Domain.Entities;
 using InventoryControl.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace InventoryControl.Api.Controllers;
 
@@ -126,10 +129,12 @@ public class PurchasesController : ControllerBase
             {
                 StoreName = string.IsNullOrWhiteSpace(dto.Store_Name ?? dto.StoreName)
                     ? "Supermercado"
-                    : (dto.Store_Name ?? dto.StoreName)!,
+                    : NormalizeSpaces((dto.Store_Name ?? dto.StoreName)!),
                 Notes = dto.Notes,
                 CreatedAt = DateTime.UtcNow
             };
+            var marketKey = NormalizeProductKey(purchase.StoreName);
+            var knownProducts = await _context.Products.ToListAsync();
 
             foreach (var itemDto in dto.Items)
             {
@@ -138,6 +143,8 @@ public class PurchasesController : ControllerBase
                     : !string.IsNullOrWhiteSpace(itemDto.Name)
                         ? itemDto.Name
                         : itemDto.Description ?? "Produto";
+                name = NormalizeSpaces(name);
+                var barcode = itemDto.Barcode?.Trim();
                 var unitPrice = itemDto.Unit_Price != 0 ? itemDto.Unit_Price : itemDto.UnitPrice;
                 var itemTotal = Math.Round(itemDto.Quantity * unitPrice, 2);
                 totalAmount += itemTotal;
@@ -149,13 +156,35 @@ public class PurchasesController : ControllerBase
                 {
                     product = await _context.Products.FindAsync(itemDto.Product_Id.Value);
                 }
-                else if (!string.IsNullOrWhiteSpace(itemDto.Barcode))
+                else if (!string.IsNullOrWhiteSpace(barcode))
                 {
-                    product = await _context.Products.FirstOrDefaultAsync(p => p.Barcode == itemDto.Barcode);
+                    var marketIdentifier = await _context.ProductIdentifiers
+                        .FirstOrDefaultAsync(identifier => identifier.MarketName == marketKey && identifier.Code == barcode);
+                    if (marketIdentifier is not null)
+                        product = knownProducts.FirstOrDefault(candidate => candidate.Id == marketIdentifier.ProductId);
+
+                    // A store-specific code seen in a different store must not be treated as a global barcode.
+                    var codeHasStoreScope = await _context.ProductIdentifiers.AnyAsync(identifier => identifier.Code == barcode);
+                    if (product is null && !codeHasStoreScope)
+                    {
+                        product = await _context.Products.FirstOrDefaultAsync(p => p.Barcode == barcode || p.Sku == barcode);
+                    }
                 }
-                else if (!string.IsNullOrWhiteSpace(name))
+
+                if (product is null && !string.IsNullOrWhiteSpace(name))
                 {
-                    product = await _context.Products.FirstOrDefaultAsync(p => p.Name.ToLower() == name.ToLower());
+                    var nameKey = NormalizeProductKey(name);
+                    var nameMatches = knownProducts
+                        .Where(candidate => NormalizeProductKey(candidate.Name) == nameKey)
+                        .ToList();
+                    if (nameMatches.Count > 1)
+                    {
+                        return Conflict(new
+                        {
+                            error = $"Já existem vários produtos com o nome '{name}'. Selecione o produto correto no catálogo antes de registrar a compra."
+                        });
+                    }
+                    product = nameMatches.SingleOrDefault();
                 }
 
                 if (product == null)
@@ -178,7 +207,7 @@ public class PurchasesController : ControllerBase
                     product = new Product
                     {
                         Name = name,
-                        Barcode = itemDto.Barcode,
+                        Barcode = null,
                         CategoryId = cat?.Id,
                         Quantity = 0,
                         MinQuantity = 1,
@@ -189,6 +218,32 @@ public class PurchasesController : ControllerBase
                     };
                     _context.Products.Add(product);
                     await _context.SaveChangesAsync();
+                    product.Sku = $"PRD-{product.Id:D6}";
+                    await _context.SaveChangesAsync();
+                    knownProducts.Add(product);
+                }
+
+                if (string.IsNullOrWhiteSpace(product.Sku))
+                    product.Sku = $"PRD-{product.Id:D6}";
+
+                if (!string.IsNullOrWhiteSpace(barcode))
+                {
+                    var existingIdentifier = await _context.ProductIdentifiers
+                        .FirstOrDefaultAsync(identifier => identifier.MarketName == marketKey && identifier.Code == barcode);
+                    if (existingIdentifier is not null && existingIdentifier.ProductId != product.Id)
+                    {
+                        return Conflict(new { error = "Esse código já está associado a outro produto neste mercado." });
+                    }
+                    if (existingIdentifier is null)
+                    {
+                        _context.ProductIdentifiers.Add(new ProductIdentifier
+                        {
+                            ProductId = product.Id,
+                            MarketName = marketKey,
+                            Code = barcode,
+                            CreatedAt = DateTime.UtcNow
+                        });
+                    }
                 }
 
                 var previousStock = product.Quantity;
@@ -198,7 +253,7 @@ public class PurchasesController : ControllerBase
                 {
                     ProductId = product.Id,
                     ProductName = name,
-                    Barcode = itemDto.Barcode ?? product.Barcode,
+                    Barcode = barcode ?? product.Barcode,
                     Quantity = itemDto.Quantity,
                     UnitPrice = unitPrice,
                     PreviousUnitPrice = itemDto.Previous_Unit_Price ?? previousPrice,
@@ -246,5 +301,17 @@ public class PurchasesController : ControllerBase
             _logger.LogError(ex, "Erro ao registrar a compra.");
             return StatusCode(500, new { error = "Erro ao registrar compra.", details = ex.Message });
         }
+    }
+
+    private static string NormalizeSpaces(string value) =>
+        Regex.Replace(value.Trim(), @"\s+", " ");
+
+    private static string NormalizeProductKey(string value)
+    {
+        var decomposed = NormalizeSpaces(value).Normalize(NormalizationForm.FormD);
+        var withoutDiacritics = new string(decomposed
+            .Where(character => CharUnicodeInfo.GetUnicodeCategory(character) != UnicodeCategory.NonSpacingMark)
+            .ToArray());
+        return NormalizeSpaces(withoutDiacritics).ToUpperInvariant();
     }
 }

@@ -8,6 +8,7 @@ public class Product
     public string Name { get; set; } = string.Empty;
     public int? CategoryId { get; set; }
     public Category? Category { get; set; }
+    public ICollection<ProductIdentifier> Identifiers { get; set; } = new List<ProductIdentifier>();
     public string Location { get; set; } = "Despensa";
     public string Unit { get; set; } = "un";
     public decimal Quantity { get; set; }

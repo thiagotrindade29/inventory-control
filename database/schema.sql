@@ -38,6 +38,17 @@ CREATE TABLE IF NOT EXISTS products (
   updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Códigos próprios de cada mercado vinculados ao produto canônico do estoque.
+CREATE TABLE IF NOT EXISTS product_identifiers (
+  id          SERIAL PRIMARY KEY,
+  product_id  INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  market_name VARCHAR(120) NOT NULL,
+  code        VARCHAR(80) NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT ux_product_identifiers_market_code UNIQUE (market_name, code)
+);
+CREATE INDEX IF NOT EXISTS ix_product_identifiers_product_id ON product_identifiers(product_id);
+
 -- Garantir colunas adicionais caso a tabela já existisse
 ALTER TABLE products DROP CONSTRAINT IF EXISTS products_sku_key;
 ALTER TABLE products ALTER COLUMN sku TYPE VARCHAR(60);

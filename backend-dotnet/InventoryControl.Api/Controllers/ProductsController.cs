@@ -53,6 +53,11 @@ public class ProductsController : ControllerBase
                 id = p.Id,
                 sku = p.Sku,
                 barcode = p.Barcode,
+                identifiers = p.Identifiers.Select(identifier => new
+                {
+                    market_name = identifier.MarketName,
+                    code = identifier.Code
+                }).ToList(),
                 name = p.Name,
                 category_id = p.CategoryId,
                 category_name = p.Category != null ? p.Category.Name : "Geral",
@@ -77,7 +82,8 @@ public class ProductsController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<object>> GetProduct(int id)
     {
-        var p = await _context.Products.Include(prod => prod.Category).FirstOrDefaultAsync(prod => prod.Id == id);
+        var p = await _context.Products.Include(prod => prod.Category).Include(prod => prod.Identifiers)
+            .FirstOrDefaultAsync(prod => prod.Id == id);
         if (p == null)
             return NotFound(new { error = "Produto não encontrado." });
 
@@ -86,6 +92,11 @@ public class ProductsController : ControllerBase
             id = p.Id,
             sku = p.Sku,
             barcode = p.Barcode,
+            identifiers = p.Identifiers.Select(identifier => new
+            {
+                market_name = identifier.MarketName,
+                code = identifier.Code
+            }),
             name = p.Name,
             category_id = p.CategoryId,
             category_name = p.Category != null ? p.Category.Name : "Geral",
@@ -148,6 +159,12 @@ public class ProductsController : ControllerBase
         _context.Products.Add(product);
         await _context.SaveChangesAsync();
 
+        if (string.IsNullOrWhiteSpace(product.Sku))
+        {
+            product.Sku = $"PRD-{product.Id:D6}";
+            await _context.SaveChangesAsync();
+        }
+
         return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
     }
 
@@ -160,7 +177,7 @@ public class ProductsController : ControllerBase
             return NotFound(new { error = "Produto não encontrado." });
 
         product.Name = input.Name;
-        product.Sku = input.Sku;
+        product.Sku = string.IsNullOrWhiteSpace(input.Sku) ? product.Sku : input.Sku.Trim();
         product.Barcode = input.Barcode;
         product.CategoryId = input.Category_Id ?? input.CategoryId;
         product.Location = input.Location ?? product.Location;
@@ -175,6 +192,9 @@ public class ProductsController : ControllerBase
         {
             product.UpdatePrice(newPrice);
         }
+
+        if (string.IsNullOrWhiteSpace(product.Sku))
+            product.Sku = $"PRD-{product.Id:D6}";
 
         product.UpdatedAt = DateTime.UtcNow;
 

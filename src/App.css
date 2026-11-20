@@ -2639,3 +2639,48 @@
   border-radius: 16px !important;
   box-shadow: 0 20px 40px -8px rgba(15, 23, 42, 0.25) !important;
 }
+
+/* Regras finais para o carrinho e os cartões financeiros em telas estreitas. */
+.market-mode-view .cart-edit-input {
+  box-sizing: border-box;
+  width: 100% !important;
+  min-width: 0;
+  min-height: 44px;
+  padding: 9px 10px !important;
+  font-size: 1rem !important;
+  font-variant-numeric: tabular-nums;
+}
+.market-mode-view .input-currency-wrapper { box-sizing: border-box; width: 100%; min-width: 0; }
+.market-mode-view .input-currency-wrapper .cart-edit-input { flex: 1 1 0; border: 0 !important; }
+.market-mode-view .cart-remove-button { min-width: 76px; min-height: 40px; white-space: nowrap; }
+.financial-view { width: 100%; min-width: 0; align-items: stretch; }
+.financial-view .financial-dashboard-grid,
+.financial-view > .erp-card,
+.financial-view .purchases-table-wrapper,
+.financial-view .table-responsive {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin-inline: 0;
+}
+@media (max-width: 640px) {
+  .market-mode-view .cart-live-summary,
+  .market-mode-view .table-wrap,
+  .financial-view .erp-card,
+  .financial-view .financial-dashboard-grid,
+  .market-mode-view .erp-table tbody tr,
+  .financial-view .erp-table tbody tr {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+  }
+  .market-mode-view .erp-table tbody td,
+  .financial-view .erp-table tbody td { grid-template-columns: minmax(76px, 30%) minmax(0, 1fr); }
+  .market-mode-view .erp-table tbody td[data-label="Ações"] { align-items: center; }
+  .market-mode-view .cart-remove-button { min-height: 44px; }
+  .financial-view .financial-dashboard-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .financial-view .table-responsive,
+  .financial-view .purchases-table-wrapper { padding: 0; overflow: visible; }
+}

@@ -107,6 +107,21 @@ await using (var scope = app.Services.CreateAsyncScope())
     var authDb = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
     await authDb.Database.ExecuteSqlRawAsync("CREATE SCHEMA IF NOT EXISTS auth;");
     await authDb.Database.MigrateAsync();
+
+    var inventoryDb = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await inventoryDb.Database.ExecuteSqlRawAsync("""
+        CREATE TABLE IF NOT EXISTS product_identifiers (
+            id SERIAL PRIMARY KEY,
+            product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+            market_name VARCHAR(120) NOT NULL,
+            code VARCHAR(80) NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS ux_product_identifiers_market_code
+            ON product_identifiers (market_name, code);
+        CREATE INDEX IF NOT EXISTS ix_product_identifiers_product_id
+            ON product_identifiers (product_id);
+        """);
 }
 
 // Configura o Pipeline de execução HTTP

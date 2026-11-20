@@ -38,12 +38,12 @@ export default function MarketModeView({
   }, [searchQuery, products])
 
   // Adicionar produto existente ao carrinho
-  function handleAddToCart(product) {
+  function handleAddToCart(product, scannedCode = '') {
     const existingIndex = cartItems.findIndex((it) => it.product_id === product.id)
     if (existingIndex >= 0) {
       setCartItems((prev) => {
         const copy = [...prev]
-        copy[existingIndex].quantity = Number(copy[existingIndex].quantity) + 1
+        copy[existingIndex].quantity = String((Number(String(copy[existingIndex].quantity).replace(',', '.')) || 0) + 1)
         return copy
       })
     } else {
@@ -57,12 +57,12 @@ export default function MarketModeView({
           id: `item-${Date.now()}-${Math.random()}`,
           product_id: product.id,
           name: product.name,
-          barcode: product.barcode || product.sku || '',
+          barcode: scannedCode || product.barcode || '',
           category_id: product.category_id,
           category_name: product.category_name,
           category_color: product.category_color,
-          quantity: neededQty,
-          unit_price: unitPrice,
+          quantity: String(neededQty),
+          unit_price: unitPrice > 0 ? String(unitPrice) : '',
           previous_unit_price: prevPrice,
           unit: product.unit || 'un',
         },
@@ -77,14 +77,20 @@ export default function MarketModeView({
     const cleanBarcode = barcode.trim()
 
     // Procura o produto no catálogo
-    const matched = products.find(
-      (p) =>
-        (p.barcode && p.barcode.trim() === cleanBarcode) ||
-        (p.sku && p.sku.trim() === cleanBarcode)
+    const normalizeMarket = (value) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().replace(/\s+/g, ' ').toUpperCase()
+    const marketKey = normalizeMarket(storeName || 'Supermercado')
+    const aliasMatches = (product) => product.identifiers?.some((identifier) =>
+      identifier.code?.trim() === cleanBarcode && normalizeMarket(identifier.market_name) === marketKey
     )
+    const codeIsStoreScoped = products.some((product) =>
+      product.identifiers?.some((identifier) => identifier.code?.trim() === cleanBarcode)
+    )
+    const matched = products.find(aliasMatches) || (!codeIsStoreScoped && products.find((product) =>
+      product.barcode?.trim() === cleanBarcode || product.sku?.trim() === cleanBarcode
+    ))
 
     if (matched) {
-      handleAddToCart(matched)
+      handleAddToCart(matched, cleanBarcode)
       setScanFeedback({
         type: 'found',
         message: `✅ "${matched.name}" adicionado ao carrinho! Preço anterior: R$ ${Number(matched.unit_price || 0).toFixed(2)}`,
@@ -101,8 +107,8 @@ export default function MarketModeView({
           category_id: categories[0]?.id || null,
           category_name: categories[0]?.name || 'Geral',
           category_color: categories[0]?.color || '#3b82f6',
-          quantity: 1,
-          unit_price: 0,
+          quantity: '1',
+          unit_price: '',
           previous_unit_price: 0,
           unit: 'un',
         },
@@ -136,8 +142,8 @@ export default function MarketModeView({
           category_id: prod.category_id,
           category_name: prod.category_name,
           category_color: prod.category_color,
-          quantity: neededQty,
-          unit_price: unitPrice,
+          quantity: String(neededQty),
+          unit_price: unitPrice > 0 ? String(unitPrice) : '',
           previous_unit_price: prevPrice,
           unit: prod.unit || 'un',
         })
@@ -163,8 +169,8 @@ export default function MarketModeView({
         category_id: categories[0]?.id || null,
         category_name: categories[0]?.name || 'Geral',
         category_color: categories[0]?.color || '#3b82f6',
-        quantity: 1,
-        unit_price: 0,
+        quantity: '1',
+        unit_price: '',
         previous_unit_price: 0,
         unit: 'un',
       },
@@ -178,7 +184,7 @@ export default function MarketModeView({
         if (it.id !== id) return it
         return {
           ...it,
-          [field]: field === 'quantity' || field === 'unit_price' ? Number(value) : value,
+          [field]: value,
         }
       })
     )
@@ -195,8 +201,8 @@ export default function MarketModeView({
     let previousTotalValue = 0
 
     for (const item of cartItems) {
-      const q = Number(item.quantity) || 0
-      const p = Number(item.unit_price) || 0
+      const q = Number(String(item.quantity).replace(',', '.')) || 0
+      const p = Number(String(item.unit_price).replace(',', '.')) || 0
       const prevP = Number(item.previous_unit_price) || p
 
       totalValue += q * p
@@ -226,6 +232,17 @@ export default function MarketModeView({
       return
     }
 
+    const hasInvalidAmounts = cartItems.some((item) => {
+      const quantity = Number(String(item.quantity).replace(',', '.'))
+      const price = Number(String(item.unit_price).replace(',', '.'))
+      return !Number.isFinite(quantity) || quantity <= 0 ||
+        String(item.unit_price).trim() === '' || !Number.isFinite(price) || price < 0
+    })
+    if (hasInvalidAmounts) {
+      alert('Confira as quantidades (maiores que zero) e os preços dos itens antes de finalizar.')
+      return
+    }
+
     setIsSubmitting(true)
     try {
       const payload = {
@@ -235,8 +252,8 @@ export default function MarketModeView({
           product_id: it.product_id,
           name: it.name,
           barcode: it.barcode,
-          quantity: it.quantity,
-          unit_price: it.unit_price,
+          quantity: Number(String(it.quantity).replace(',', '.')),
+          unit_price: Number(String(it.unit_price).replace(',', '.')),
           previous_unit_price: it.previous_unit_price,
           category_id: it.category_id,
         })),
@@ -543,9 +560,9 @@ export default function MarketModeView({
                 </thead>
                 <tbody>
                   {cartItems.map((item) => {
-                    const price = Number(item.unit_price) || 0
+                    const price = Number(String(item.unit_price).replace(',', '.')) || 0
                     const prevPrice = Number(item.previous_unit_price) || 0
-                    const subtotal = (Number(item.quantity) || 0) * price
+                    const subtotal = (Number(String(item.quantity).replace(',', '.')) || 0) * price
 
                     let diffPercent = 0
                     if (prevPrice > 0 && price > 0) {
@@ -583,11 +600,12 @@ export default function MarketModeView({
 
                         <td style={{ width: '110px' }} data-label="Quantidade">
                           <input
-                            type="number"
-                            step="any"
-                            min="0.01"
-                            className="input-field input-sm text-center"
+                            type="text"
+                            inputMode="decimal"
+                            aria-label={`Quantidade de ${item.name || 'produto novo'}`}
+                            className="input-field input-sm text-center cart-edit-input"
                             value={item.quantity}
+                            onFocus={(e) => e.currentTarget.select()}
                             onChange={(e) =>
                               handleUpdateItem(item.id, 'quantity', e.target.value)
                             }
@@ -598,11 +616,12 @@ export default function MarketModeView({
                           <div className="input-currency-wrapper">
                             <span>R$</span>
                             <input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              className="input-field input-sm"
+                              type="text"
+                              inputMode="decimal"
+                              aria-label={`Preço unitário de ${item.name || 'produto novo'}`}
+                              className="input-field input-sm cart-edit-input"
                               value={item.unit_price}
+                              onFocus={(e) => e.currentTarget.select()}
                               onChange={(e) =>
                                 handleUpdateItem(item.id, 'unit_price', e.target.value)
                               }
@@ -639,11 +658,11 @@ export default function MarketModeView({
                         <td data-label="Ações">
                           <button
                             type="button"
-                            className="btn btn-xs btn-danger"
+                            className="btn btn-xs btn-danger cart-remove-button"
                             onClick={() => handleRemoveItem(item.id)}
                             title="Remover do carrinho"
                           >
-                            ✕
+                            Remover
                           </button>
                         </td>
                       </tr>
