@@ -66,7 +66,14 @@ inventory-control/
    dotnet user-secrets set "Jwt:Key" $jwtKey --project backend-dotnet/InventoryControl.Api
    dotnet user-secrets set "Auth:BootstrapKey" $bootstrapKey --project backend-dotnet/InventoryControl.Api
    ```
-   Para recuperar apenas a chave usada na primeira tela, execute `dotnet user-secrets get "Auth:BootstrapKey" --project backend-dotnet/InventoryControl.Api`. Não compartilhe esses segredos nem os salve no Git.
+   Para copiar apenas a chave usada na primeira tela sem imprimir as outras credenciais:
+   ```powershell
+   $secretLines = dotnet user-secrets list --json --project backend-dotnet/InventoryControl.Api
+   $secretJson = ($secretLines | Where-Object { $_ -notmatch '^//(BEGIN|END)' }) -join "`n"
+   $bootstrapKey = ($secretJson | ConvertFrom-Json).'Auth:BootstrapKey'
+   Set-Clipboard -Value $bootstrapKey
+   ```
+   Não compartilhe esses segredos nem os salve no Git.
 3. Inicie a API:
    ```powershell
    dotnet run --project backend-dotnet/InventoryControl.Api --launch-profile http

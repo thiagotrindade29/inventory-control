@@ -1,2 +1,0 @@
-front-end: npm.cmd run dev
-back-end: dotnet run --urls "http://localhost:5000"

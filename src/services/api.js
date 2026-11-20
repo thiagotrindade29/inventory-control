@@ -43,7 +43,14 @@ async function request(endpoint, options = {}) {
   if (response.status === 401 && token) clearAuthSession()
 
   if (!response.ok) {
-    const error = new Error(data?.error || 'Erro ao comunicar com o servidor.')
+    const validationErrors = data?.errors
+    const validationMessage = Array.isArray(validationErrors)
+      ? validationErrors.join(' ')
+      : validationErrors && typeof validationErrors === 'object'
+        ? Object.values(validationErrors).flat().filter(Boolean).join(' ')
+        : ''
+    const message = data?.error || validationMessage || data?.message || data?.title || 'Erro ao comunicar com o servidor.'
+    const error = new Error(message)
     error.data = data
     error.status = response.status
     throw error

@@ -1,3 +1,0 @@
-Opção A (Foco em Segurança & Acesso): Implementar a Tela de Login + Autenticação JWT no ASP.NET Core com controle de usuários.
-Opção B (Foco na Experiência no Mercado): Transformar o frontend em PWA com Câmera/Scanner de código de barras no celular + Calculadora de Carrinho em tempo real com comparativo de preço.
-Opção C (Foco Visual): Redesenhar o design do frontend para o padrão Modern SaaS / Fintech (Dark Mode, cards modernos, animações suaves).
