@@ -19,6 +19,7 @@ public sealed class AuthDbContext : IdentityDbContext<ApplicationUser>
         {
             organization.ToTable("organizations");
             organization.HasKey(x => x.Id);
+            organization.Property(x => x.Id).HasColumnName("id");
             organization.Property(x => x.Name).HasMaxLength(120).IsRequired();
             organization.Property(x => x.CreatedAt).HasColumnName("created_at");
         });

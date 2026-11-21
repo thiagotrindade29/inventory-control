@@ -101,6 +101,7 @@ namespace InventoryControl.Infrastructure.Data.AuthMigrations
             modelBuilder.Entity("InventoryControl.Infrastructure.Data.Organization", b =>
                 {
                     b.Property<int>("Id")
+                        .HasColumnName("id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
