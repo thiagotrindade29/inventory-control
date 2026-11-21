@@ -102,7 +102,9 @@ Configure as variáveis abaixo na aba **Environment** do serviço. Use a URL/con
 - `Auth__BootstrapKey`: chave aleatória de uso único para cadastrar a primeira conta administradora.
 - `ASPNETCORE_ENVIRONMENT`: `Production`.
 
-Na primeira inicialização, a API aplica a migração de autenticação e prepara o esquema de estoque no PostgreSQL. Depois que o serviço publicar, confira o endpoint público `/api/auth/status` e use a tela inicial para cadastrar o administrador. O frontend deve ser publicado como um serviço separado, configurado para usar a URL HTTPS da API.
+Na primeira inicialização, a API aplica a migração de autenticação e prepara o esquema de estoque no PostgreSQL. Depois que o serviço publicar, confira o endpoint público `/api/auth/status` e use a tela inicial para cadastrar o administrador.
+
+Para integrar o frontend publicado, crie um **Static Site** no Render usando a raiz do repositório, o comando de build `npm ci && npm run build` e o diretório de publicação `dist`. Configure a variável de build `VITE_API_URL` com a URL HTTPS da API terminada em `/api`, por exemplo `https://inventory-control-z9sx.onrender.com/api`. Depois que o Static Site for criado, copie a origem pública dele (apenas `https://dominio.onrender.com`) e configure a variável `Cors__AllowedOrigins` no Web Service da API com essa origem. Se precisar autorizar mais de uma origem, separe por vírgulas. Salve e publique novamente a API após adicionar o CORS.
 
 Para gerar valores aleatórios localmente no PowerShell, sem colocá-los no repositório:
 

@@ -88,6 +88,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 builder.Services.AddAuthorization();
 
+var allowedOrigins = (builder.Configuration["Cors:AllowedOrigins"] ?? string.Empty)
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    .Select(origin => origin.TrimEnd('/'))
+    .Where(origin => !string.IsNullOrWhiteSpace(origin))
+    .ToArray();
+builder.Services.AddCors(options => options.AddPolicy("Frontend", policy =>
+{
+    policy.AllowAnyHeader().AllowAnyMethod();
+    if (allowedOrigins.Length > 0)
+        policy.WithOrigins(allowedOrigins);
+}));
+
 // Registrar Serviços da Aplicação (Injeção de Dependência)
 builder.Services.AddScoped<InventoryControl.Application.Services.NfeService>();
 builder.Services.AddHttpClient();
@@ -194,6 +206,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
 

@@ -1,4 +1,5 @@
-const API_BASE = '/api'
+const configuredApiBase = import.meta.env.VITE_API_URL?.trim()
+const API_BASE = (configuredApiBase || '/api').replace(/\/+$/, '')
 const AUTH_TOKEN_KEY = 'inventory.accessToken'
 const AUTH_USER_KEY = 'inventory.authUser'
 
