@@ -138,12 +138,16 @@ public class ProductsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<object>> CreateProduct([FromBody] ProductInputDto input)
     {
+        var categoryId = input.Category_Id ?? input.CategoryId;
+        if (categoryId.HasValue && !await _context.Categories.AnyAsync(category => category.Id == categoryId.Value))
+            return BadRequest(new { error = "Categoria não encontrada nesta organização." });
+
         var product = new Product
         {
             Sku = input.Sku,
             Barcode = input.Barcode,
             Name = input.Name,
-            CategoryId = input.Category_Id ?? input.CategoryId,
+            CategoryId = categoryId,
             Location = input.Location ?? "Despensa",
             Unit = input.Unit ?? "un",
             Quantity = input.Quantity,
@@ -172,14 +176,17 @@ public class ProductsController : ControllerBase
     [HttpPut("{id:int}")]
     public async Task<IActionResult> UpdateProduct(int id, [FromBody] ProductInputDto input)
     {
-        var product = await _context.Products.FindAsync(id);
+        var product = await _context.Products.FirstOrDefaultAsync(candidate => candidate.Id == id);
         if (product == null)
             return NotFound(new { error = "Produto não encontrado." });
 
         product.Name = input.Name;
         product.Sku = string.IsNullOrWhiteSpace(input.Sku) ? product.Sku : input.Sku.Trim();
         product.Barcode = input.Barcode;
-        product.CategoryId = input.Category_Id ?? input.CategoryId;
+        var categoryId = input.Category_Id ?? input.CategoryId;
+        if (categoryId.HasValue && !await _context.Categories.AnyAsync(category => category.Id == categoryId.Value))
+            return BadRequest(new { error = "Categoria não encontrada nesta organização." });
+        product.CategoryId = categoryId;
         product.Location = input.Location ?? product.Location;
         product.Quantity = input.Quantity;
         product.MinQuantity = input.Min_Quantity > 0 ? input.Min_Quantity : (input.MinQuantity > 0 ? input.MinQuantity : product.MinQuantity);
@@ -206,7 +213,7 @@ public class ProductsController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteProduct(int id)
     {
-        var product = await _context.Products.FindAsync(id);
+        var product = await _context.Products.FirstOrDefaultAsync(candidate => candidate.Id == id);
         if (product == null)
             return NotFound(new { error = "Produto não encontrado." });
 

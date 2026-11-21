@@ -13,11 +13,17 @@ namespace InventoryControl.Api.Controllers;
 public sealed class UsersController : ControllerBase
 {
     private readonly UserManager<ApplicationUser> _users;
+    private readonly ICurrentOrganization _organization;
 
-    public UsersController(UserManager<ApplicationUser> users) => _users = users;
+    public UsersController(UserManager<ApplicationUser> users, ICurrentOrganization organization)
+    {
+        _users = users;
+        _organization = organization;
+    }
 
     [HttpGet]
     public async Task<IActionResult> GetUsers() => Ok(await _users.Users
+        .Where(user => user.OrganizationId == _organization.OrganizationId)
         .OrderBy(user => user.DisplayName)
         .Select(user => new { id = user.Id, email = user.Email, displayName = user.DisplayName, active = !user.LockoutEnd.HasValue || user.LockoutEnd <= DateTimeOffset.UtcNow })
         .ToListAsync());
@@ -30,6 +36,7 @@ public sealed class UsersController : ControllerBase
             UserName = request.Email.Trim(),
             Email = request.Email.Trim(),
             DisplayName = request.DisplayName.Trim(),
+            OrganizationId = _organization.OrganizationId ?? 0,
             EmailConfirmed = true
         };
         var result = await _users.CreateAsync(user, request.Password);
@@ -53,7 +60,9 @@ public sealed class UsersController : ControllerBase
             User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value == id)
             return BadRequest(new { error = "Não é possível remover a própria conta autenticada." });
 
-        var user = await _users.FindByIdAsync(id);
+        var organizationId = _organization.OrganizationId;
+        var user = await _users.Users.FirstOrDefaultAsync(candidate =>
+            candidate.Id == id && candidate.OrganizationId == organizationId);
         if (user is null) return NotFound(new { error = "Usuário não encontrado." });
         var result = await _users.DeleteAsync(user);
         return result.Succeeded ? NoContent() : BadRequest(new { errors = result.Errors.Select(error => error.Description) });

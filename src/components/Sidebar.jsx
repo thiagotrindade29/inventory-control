@@ -90,15 +90,16 @@ export default function Sidebar({
   return (
     <aside className="erp-sidebar">
       <div className="sidebar-brand">
-        <div className="brand-logo">CE</div>
+        <img className="brand-logo" src="/astrogestao.svg" alt="" aria-hidden="true" />
         <div>
-          <strong>Casa Financeira </strong>
-          <span>Controle Pessoal</span>
+          <strong>AstroGestão</strong>
+          <span>Estoque e finanças</span>
         </div>
       </div>
 
       <nav className="sidebar-nav" aria-label="Menu principal">
-        {NAV_ITEMS.filter((item) => item.id !== 'users' || authUser?.roles?.includes('Admin')).map((item) => {
+        <span className="nav-section-label">ESPAÇO DE TRABALHO</span>
+        {NAV_ITEMS.filter((item) => ['dashboard', 'products', 'market', 'finance'].includes(item.id)).map((item) => {
           const isActive = activeTab === item.id
           return (
             <button
@@ -114,6 +115,17 @@ export default function Sidebar({
                   {lowStockCount}
                 </span>
               )}
+            </button>
+          )
+        })}
+
+        <span className="nav-section-label nav-section-management">GESTÃO</span>
+        {NAV_ITEMS.filter((item) => ['movements', 'categories', 'users'].includes(item.id) && (item.id !== 'users' || authUser?.roles?.includes('Admin'))).map((item) => {
+          const isActive = activeTab === item.id
+          return (
+            <button key={item.id} type="button" className={`nav-item ${isActive ? 'active' : ''}`} onClick={() => onSelectTab(item.id)}>
+              <NavIcon name={item.icon} />
+              <span>{item.label}</span>
             </button>
           )
         })}

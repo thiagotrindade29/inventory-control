@@ -154,7 +154,7 @@ public class PurchasesController : ControllerBase
 
                 if (itemDto.Product_Id.HasValue && itemDto.Product_Id.Value > 0)
                 {
-                    product = await _context.Products.FindAsync(itemDto.Product_Id.Value);
+                    product = await _context.Products.FirstOrDefaultAsync(candidate => candidate.Id == itemDto.Product_Id.Value);
                 }
                 else if (!string.IsNullOrWhiteSpace(barcode))
                 {
@@ -190,7 +190,7 @@ public class PurchasesController : ControllerBase
                 if (product == null)
                 {
                     Category? cat = itemDto.Category_Id.HasValue
-                        ? await _context.Categories.FindAsync(itemDto.Category_Id.Value)
+                        ? await _context.Categories.FirstOrDefaultAsync(candidate => candidate.Id == itemDto.Category_Id.Value)
                         : null;
                     var categoryName = itemDto.Category;
                     if (cat == null && !string.IsNullOrWhiteSpace(categoryName))

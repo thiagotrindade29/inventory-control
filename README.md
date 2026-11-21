@@ -1,13 +1,13 @@
-# CasaERP — Sistema de Controle de Estoque Doméstico
+# AstroGestão — Sistema de Controle de Estoque e Finanças
 
-Um sistema **ERP pessoal** para gestão e controle de estoque residencial, desenvolvido com **React + JavaScript** no frontend e **ASP.NET Core .NET 9 + Entity Framework Core + PostgreSQL** no backend.
+Um sistema **ERP pessoal** para gestão e controle de estoque residencial, desenvolvido com **React + JavaScript** no frontend e **ASP.NET Core .NET 10 LTS + Entity Framework Core + PostgreSQL** no backend.
 
 ---
 
 ## 🛠️ Tecnologias Utilizadas
 
 - **Frontend:** React 19, Vite, CSS Moderno (Flexbox/Grid, CSS Variables)
-- **Backend:** ASP.NET Core .NET 9, Entity Framework Core, Npgsql
+- **Backend:** ASP.NET Core .NET 10 LTS, Entity Framework Core, Npgsql
 - **Banco de Dados:** PostgreSQL 17 (com Triggers, Foreign Keys, Transações SQL e Constraints `CHECK`)
 - **Qualidade de Código:** Oxlint, Vite Build
 
@@ -45,21 +45,21 @@ inventory-control/
    ```sql
    CREATE DATABASE home_erp;
    ```
-3. Execute os scripts SQL da pasta `database/`:
+3. A estrutura do banco é aplicada automaticamente na primeira inicialização da API. Se quiser carregar dados fictícios para desenvolvimento, rode o seed depois que a API criar as tabelas:
    ```powershell
-   psql -U postgres -d home_erp -f database/schema.sql
    psql -U postgres -d home_erp -f database/seed.sql
    ```
 
 ---
 
 ### 2. Configurar e Iniciar o Backend ASP.NET Core
-1. Guarde a conexão do PostgreSQL em User Secrets (faça `init` uma vez):
+1. Instale o [SDK do .NET 10](https://dotnet.microsoft.com/download/dotnet/10.0). A imagem de produção e todos os projetos do backend usam `net10.0`.
+2. Guarde a conexão do PostgreSQL em User Secrets (faça `init` uma vez):
    ```powershell
    dotnet user-secrets init --project backend-dotnet/InventoryControl.Api
    dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=home_erp;Username=postgres;Password=SUA_SENHA" --project backend-dotnet/InventoryControl.Api
    ```
-2. Gere segredos locais para a autenticação. A chave JWT deve ser aleatória e ter pelo menos 32 bytes; a chave de configuração inicial protege a criação da primeira conta:
+3. Gere segredos locais para a autenticação. A chave JWT deve ser aleatória e ter pelo menos 32 bytes; a chave de configuração inicial protege a criação da primeira conta:
    ```powershell
    $jwtKey = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(48))
    $bootstrapKey = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
@@ -74,11 +74,11 @@ inventory-control/
    Set-Clipboard -Value $bootstrapKey
    ```
    Não compartilhe esses segredos nem os salve no Git.
-3. Inicie a API:
+4. Inicie a API:
    ```powershell
    dotnet run --project backend-dotnet/InventoryControl.Api --launch-profile http
    ```
-   *A API estará em `http://localhost:5000`. Na primeira inicialização, uma migração cria as tabelas de autenticação no schema PostgreSQL `auth`; as tabelas de estoque atuais permanecem intactas.*
+   *A API estará em `http://localhost:5000`. Na primeira inicialização, migrações criam as tabelas de autenticação no schema `auth`, e `database/schema.sql` prepara as tabelas de estoque. Os dados existentes são associados à organização inicial.*
 
 ---
 
@@ -88,6 +88,30 @@ inventory-control/
    npm.cmd run dev
    ```
 2. Abra `http://localhost:5173`. O Vite encaminha `/api` para a API ASP.NET Core na porta `5000`. Na primeira abertura, informe a chave de configuração para criar a conta administradora. Depois, crie acessos adicionais pela aba **Usuários**.
+
+### Publicar a API no Render com Docker
+
+O repositório inclui um `Dockerfile` na raiz. No Render, crie um **Web Service** ligado ao repositório e selecione **Docker** como ambiente. Deixe o diretório raiz como `.` e use `Dockerfile` como caminho do arquivo. O container escuta a porta indicada por `PORT`, fornecida pelo Render.
+
+Configure as variáveis abaixo na aba **Environment** do serviço. Use a URL/conexão interna do PostgreSQL criado no Render e mantenha os segredos fora do Git:
+
+- `ConnectionStrings__DefaultConnection`: connection string PostgreSQL (`Host`, `Port`, `Database`, `Username`, `Password` e `SSL Mode=Require` quando exigido pelo provedor).
+- `Jwt__Key`: segredo aleatório com pelo menos 32 bytes.
+- `Jwt__Issuer`: identificador da API, por exemplo `AstroGestao`.
+- `Jwt__Audience`: identificador dos clientes da API, por exemplo `AstroGestao.Web`.
+- `Auth__BootstrapKey`: chave aleatória de uso único para cadastrar a primeira conta administradora.
+- `ASPNETCORE_ENVIRONMENT`: `Production`.
+
+Na primeira inicialização, a API aplica a migração de autenticação e prepara o esquema de estoque no PostgreSQL. Depois que o serviço publicar, confira o endpoint público `/api/auth/status` e use a tela inicial para cadastrar o administrador. O frontend deve ser publicado como um serviço separado, configurado para usar a URL HTTPS da API.
+
+Para gerar valores aleatórios localmente no PowerShell, sem colocá-los no repositório:
+
+```powershell
+$jwtKey = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(48))
+$bootstrapKey = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
+```
+
+Copie os valores diretamente para os campos secretos do Render e não os imprima em logs ou os envie junto com o código. A imagem pode ser compilada localmente com `docker build -t astrogestao-api .`.
 
 #### Abrir no celular com HTTPS durante o desenvolvimento
 

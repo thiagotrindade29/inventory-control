@@ -1,8 +1,11 @@
+using System.Text.Json.Serialization;
+
 namespace InventoryControl.Domain.Entities;
 
 public class PurchaseItem
 {
     public int Id { get; set; }
+    [JsonIgnore] public int OrganizationId { get; set; }
     public int PurchaseId { get; set; }
     public Purchase? Purchase { get; set; }
 

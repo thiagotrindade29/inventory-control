@@ -13,7 +13,8 @@ $$ LANGUAGE plpgsql;
 -- 1. Tabela de Categorias
 CREATE TABLE IF NOT EXISTS categories (
   id          SERIAL PRIMARY KEY,
-  name        VARCHAR(80) NOT NULL UNIQUE,
+  organization_id INTEGER NOT NULL DEFAULT 1,
+  name        VARCHAR(80) NOT NULL,
   description VARCHAR(255),
   color       VARCHAR(20) NOT NULL DEFAULT '#3b82f6',
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -22,7 +23,8 @@ CREATE TABLE IF NOT EXISTS categories (
 -- 2. Tabela de Produtos (Catálogo + Estoque + Preço Anterior para Comparativo)
 CREATE TABLE IF NOT EXISTS products (
   id                  SERIAL PRIMARY KEY,
-  sku                 VARCHAR(60) UNIQUE,
+  organization_id     INTEGER NOT NULL DEFAULT 1,
+  sku                 VARCHAR(60),
   barcode             VARCHAR(60),
   name                VARCHAR(150) NOT NULL,
   category_id         INTEGER REFERENCES categories(id) ON DELETE SET NULL,
@@ -41,11 +43,12 @@ CREATE TABLE IF NOT EXISTS products (
 -- Códigos próprios de cada mercado vinculados ao produto canônico do estoque.
 CREATE TABLE IF NOT EXISTS product_identifiers (
   id          SERIAL PRIMARY KEY,
+  organization_id INTEGER NOT NULL DEFAULT 1,
   product_id  INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   market_name VARCHAR(120) NOT NULL,
   code        VARCHAR(80) NOT NULL,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  CONSTRAINT ux_product_identifiers_market_code UNIQUE (market_name, code)
+  CONSTRAINT ux_product_identifiers_org_market_code UNIQUE (organization_id, market_name, code)
 );
 CREATE INDEX IF NOT EXISTS ix_product_identifiers_product_id ON product_identifiers(product_id);
 
@@ -64,6 +67,7 @@ CREATE TRIGGER trg_products_updated_at
 -- 3. Tabela de Movimentações de Estoque
 CREATE TABLE IF NOT EXISTS stock_movements (
   id                SERIAL PRIMARY KEY,
+  organization_id   INTEGER NOT NULL DEFAULT 1,
   product_id        INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
   type              VARCHAR(10) NOT NULL CHECK (type IN ('IN', 'OUT', 'ADJUST')),
   quantity          NUMERIC(10, 2) NOT NULL CHECK (quantity > 0),
@@ -76,6 +80,7 @@ CREATE TABLE IF NOT EXISTS stock_movements (
 -- 4. Tabela de Compras / Notas Fiscais (Controle Financeiro)
 CREATE TABLE IF NOT EXISTS purchases (
   id           SERIAL PRIMARY KEY,
+  organization_id INTEGER NOT NULL DEFAULT 1,
   store_name   VARCHAR(120) NOT NULL DEFAULT 'Supermercado',
   total_amount NUMERIC(10, 2) NOT NULL DEFAULT 0 CHECK (total_amount >= 0),
   total_items  NUMERIC(10, 2) NOT NULL DEFAULT 0,
@@ -88,6 +93,7 @@ ALTER TABLE purchases ALTER COLUMN total_items TYPE NUMERIC(10, 2);
 -- 5. Itens da Compra (Preço pago vs Preço do Mês Anterior e Variação %)
 CREATE TABLE IF NOT EXISTS purchase_items (
   id                  SERIAL PRIMARY KEY,
+  organization_id     INTEGER NOT NULL DEFAULT 1,
   purchase_id         INTEGER NOT NULL REFERENCES purchases(id) ON DELETE CASCADE,
   product_id          INTEGER REFERENCES products(id) ON DELETE SET NULL,
   product_name        VARCHAR(150) NOT NULL,
@@ -105,3 +111,4 @@ CREATE INDEX IF NOT EXISTS idx_products_sku ON products(sku);
 CREATE INDEX IF NOT EXISTS idx_movements_product_id ON stock_movements(product_id);
 CREATE INDEX IF NOT EXISTS idx_purchases_created_at ON purchases(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_purchase_items_purchase_id ON purchase_items(purchase_id);
+

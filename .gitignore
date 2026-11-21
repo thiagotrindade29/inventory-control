@@ -15,6 +15,7 @@ dist-ssr
 .env.*
 !.env.example
 .cert/
+.build-check/
 
 # .NET Build artifacts
 **/bin/

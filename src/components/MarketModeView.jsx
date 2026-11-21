@@ -598,7 +598,7 @@ export default function MarketModeView({
                           )}
                         </td>
 
-                        <td style={{ width: '110px' }} data-label="Quantidade">
+                        <td className="cart-quantity-cell" data-label="Quantidade">
                           <input
                             type="text"
                             inputMode="decimal"
@@ -612,7 +612,7 @@ export default function MarketModeView({
                           />
                         </td>
 
-                        <td style={{ width: '130px' }} data-label="Preço unitário">
+                        <td className="cart-unit-price-cell" data-label="Preço unitário">
                           <div className="input-currency-wrapper">
                             <span>R$</span>
                             <input

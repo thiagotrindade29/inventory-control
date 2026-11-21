@@ -57,6 +57,10 @@ namespace InventoryControl.Infrastructure.Data.AuthMigrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<int>("OrganizationId")
+                        .HasColumnName("organization_id")
+                        .HasColumnType("integer");
+
                     b.Property<string>("NormalizedUserName")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
@@ -89,7 +93,31 @@ namespace InventoryControl.Infrastructure.Data.AuthMigrations
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex");
 
+                    b.HasIndex("OrganizationId");
+
                     b.ToTable("AspNetUsers", "auth");
+                });
+
+            modelBuilder.Entity("InventoryControl.Infrastructure.Data.Organization", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnName("created_at")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("organizations", "auth");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -141,6 +169,17 @@ namespace InventoryControl.Infrastructure.Data.AuthMigrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("AspNetRoleClaims", "auth");
+                });
+
+            modelBuilder.Entity("InventoryControl.Infrastructure.Data.ApplicationUser", b =>
+                {
+                    b.HasOne("InventoryControl.Infrastructure.Data.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Organization");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>

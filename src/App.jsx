@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import './App.css'
+import './Shell.css'
 import AuthView from './components/AuthView.jsx'
 import UsersView from './components/UsersView.jsx'
 import CategoriesView from './components/CategoriesView.jsx'

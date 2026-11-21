@@ -70,7 +70,7 @@ public class MovementsController : ControllerBase
         if (input.Type is not ("IN" or "OUT"))
             return BadRequest(new { error = "O tipo deve ser IN ou OUT." });
 
-        var product = await _context.Products.FindAsync(input.Product_Id);
+        var product = await _context.Products.FirstOrDefaultAsync(candidate => candidate.Id == input.Product_Id);
         if (product == null)
             return NotFound(new { error = "Produto não encontrado." });
 

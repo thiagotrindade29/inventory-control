@@ -5,8 +5,13 @@ namespace InventoryControl.Infrastructure.Data;
 
 public class AppDbContext : DbContext
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+    private readonly ICurrentOrganization _currentOrganization;
+
+    public AppDbContext(
+        DbContextOptions<AppDbContext> options,
+        ICurrentOrganization currentOrganization) : base(options)
     {
+        _currentOrganization = currentOrganization;
     }
 
     public DbSet<Category> Categories => Set<Category>();
@@ -24,16 +29,19 @@ public class AppDbContext : DbContext
         {
             entity.ToTable("categories");
             entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.OrganizationId).HasColumnName("organization_id");
             entity.Property(e => e.Name).HasColumnName("name").IsRequired().HasMaxLength(80);
             entity.Property(e => e.Description).HasColumnName("description").HasMaxLength(255);
             entity.Property(e => e.Color).HasColumnName("color").HasMaxLength(20);
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.HasQueryFilter(e => e.OrganizationId == _currentOrganization.OrganizationId);
         });
 
         modelBuilder.Entity<Product>(entity =>
         {
             entity.ToTable("products");
             entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.OrganizationId).HasColumnName("organization_id");
             entity.Property(e => e.Sku).HasColumnName("sku").HasMaxLength(60);
             entity.Property(e => e.Barcode).HasColumnName("barcode").HasMaxLength(60);
             entity.Property(e => e.Name).HasColumnName("name").IsRequired().HasMaxLength(150);
@@ -53,12 +61,14 @@ public class AppDbContext : DbContext
                   .WithMany(c => c.Products)
                   .HasForeignKey(e => e.CategoryId)
                   .OnDelete(DeleteBehavior.SetNull);
+            entity.HasQueryFilter(e => e.OrganizationId == _currentOrganization.OrganizationId);
         });
 
         modelBuilder.Entity<Purchase>(entity =>
         {
             entity.ToTable("purchases");
             entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.OrganizationId).HasColumnName("organization_id");
             entity.Property(e => e.StoreName).HasColumnName("store_name").IsRequired().HasMaxLength(120);
             entity.Property(e => e.TotalAmount).HasColumnName("total_amount").HasPrecision(10, 2);
             entity.Property(e => e.TotalItems).HasColumnName("total_items").HasPrecision(10, 2);
@@ -69,12 +79,14 @@ public class AppDbContext : DbContext
                   .WithOne(i => i.Purchase)
                   .HasForeignKey(i => i.PurchaseId)
                   .OnDelete(DeleteBehavior.Cascade);
+            entity.HasQueryFilter(e => e.OrganizationId == _currentOrganization.OrganizationId);
         });
 
         modelBuilder.Entity<PurchaseItem>(entity =>
         {
             entity.ToTable("purchase_items");
             entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.OrganizationId).HasColumnName("organization_id");
             entity.Property(e => e.PurchaseId).HasColumnName("purchase_id");
             entity.Property(e => e.ProductId).HasColumnName("product_id");
             entity.Property(e => e.ProductName).HasColumnName("product_name").IsRequired().HasMaxLength(150);
@@ -85,12 +97,14 @@ public class AppDbContext : DbContext
             entity.Property(e => e.TotalPrice).HasColumnName("total_price").HasPrecision(10, 2);
             entity.Property(e => e.PriceVariationPct).HasColumnName("price_variation_pct").HasPrecision(6, 4);
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.HasQueryFilter(e => e.OrganizationId == _currentOrganization.OrganizationId);
         });
 
         modelBuilder.Entity<StockMovement>(entity =>
         {
             entity.ToTable("stock_movements");
             entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.OrganizationId).HasColumnName("organization_id");
             entity.Property(e => e.ProductId).HasColumnName("product_id");
             entity.Property(e => e.Type).HasColumnName("type").HasMaxLength(10);
             entity.Property(e => e.Quantity).HasColumnName("quantity").HasPrecision(10, 2);
@@ -98,19 +112,53 @@ public class AppDbContext : DbContext
             entity.Property(e => e.NewQuantity).HasColumnName("new_quantity").HasPrecision(10, 2);
             entity.Property(e => e.Reason).HasColumnName("reason").HasMaxLength(160);
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.HasQueryFilter(e => e.OrganizationId == _currentOrganization.OrganizationId);
         });
 
         modelBuilder.Entity<ProductIdentifier>(entity =>
         {
             entity.ToTable("product_identifiers");
             entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.OrganizationId).HasColumnName("organization_id");
             entity.Property(e => e.ProductId).HasColumnName("product_id");
             entity.Property(e => e.MarketName).HasColumnName("market_name").IsRequired().HasMaxLength(120);
             entity.Property(e => e.Code).HasColumnName("code").IsRequired().HasMaxLength(80);
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
-            entity.HasIndex(e => new { e.MarketName, e.Code }).IsUnique();
+            entity.HasIndex(e => new { e.OrganizationId, e.MarketName, e.Code }).IsUnique();
             entity.HasOne<Product>().WithMany(p => p.Identifiers)
                 .HasForeignKey(e => e.ProductId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasQueryFilter(e => e.OrganizationId == _currentOrganization.OrganizationId);
         });
+    }
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        ApplyOrganizationScope();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        ApplyOrganizationScope();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    private void ApplyOrganizationScope()
+    {
+        var organizationId = _currentOrganization.OrganizationId;
+        if (organizationId is null or <= 0)
+            throw new InvalidOperationException("Não foi possível identificar a organização da sessão.");
+
+        foreach (var entry in ChangeTracker.Entries().Where(entry => entry.Entity is
+                     Category or Product or Purchase or PurchaseItem or StockMovement or ProductIdentifier))
+        {
+            var organizationProperty = entry.Property("OrganizationId");
+            if (entry.State == EntityState.Added)
+                organizationProperty.CurrentValue = organizationId.Value;
+            else if (entry.State is EntityState.Modified or EntityState.Deleted &&
+                     (organizationProperty.CurrentValue is not int currentId || currentId != organizationId.Value ||
+                      organizationProperty.OriginalValue is not int originalId || originalId != organizationId.Value))
+                throw new InvalidOperationException("Não é permitido mover registros entre organizações.");
+        }
     }
 }

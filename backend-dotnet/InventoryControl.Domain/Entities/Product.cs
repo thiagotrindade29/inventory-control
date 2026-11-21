@@ -1,8 +1,11 @@
+using System.Text.Json.Serialization;
+
 namespace InventoryControl.Domain.Entities;
 
 public class Product
 {
     public int Id { get; set; }
+    [JsonIgnore] public int OrganizationId { get; set; }
     public string? Sku { get; set; }
     public string? Barcode { get; set; }
     public string Name { get; set; } = string.Empty;

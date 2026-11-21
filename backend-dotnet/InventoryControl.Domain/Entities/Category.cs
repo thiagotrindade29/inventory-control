@@ -1,8 +1,11 @@
+using System.Text.Json.Serialization;
+
 namespace InventoryControl.Domain.Entities;
 
 public class Category
 {
     public int Id { get; set; }
+    [JsonIgnore] public int OrganizationId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string Color { get; set; } = "#3b82f6";

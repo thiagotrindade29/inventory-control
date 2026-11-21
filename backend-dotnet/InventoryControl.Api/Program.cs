@@ -20,6 +20,8 @@ if (string.IsNullOrWhiteSpace(connectionString))
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentOrganization, InventoryControl.Api.CurrentOrganization>();
 
 var authConnectionString = connectionString;
 builder.Services.AddDbContext<AuthDbContext>(options =>
@@ -76,8 +78,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
                 var userId = context.Principal?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
                 var tokenStamp = context.Principal?.FindFirst("sst")?.Value;
+                var tokenOrganization = context.Principal?.FindFirst("organization_id")?.Value;
                 var user = userId is null ? null : await userManager.FindByIdAsync(userId);
-                if (user is null || string.IsNullOrEmpty(tokenStamp) || user.SecurityStamp != tokenStamp)
+                if (user is null || string.IsNullOrEmpty(tokenStamp) || user.SecurityStamp != tokenStamp ||
+                    !int.TryParse(tokenOrganization, out var organizationId) || user.OrganizationId != organizationId)
                     context.Fail("Sessão expirada ou conta removida.");
             }
         };
@@ -108,17 +112,76 @@ await using (var scope = app.Services.CreateAsyncScope())
     await authDb.Database.ExecuteSqlRawAsync("CREATE SCHEMA IF NOT EXISTS auth;");
     await authDb.Database.MigrateAsync();
 
+    if (!await authDb.Organizations.AnyAsync())
+    {
+        authDb.Organizations.Add(new Organization { Id = 1, Name = "Minha organização" });
+        await authDb.SaveChangesAsync();
+    }
+
     var inventoryDb = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var schemaPath = Path.Combine(AppContext.BaseDirectory, "database", "schema.sql");
+    if (!File.Exists(schemaPath))
+        throw new FileNotFoundException("O script de estrutura do banco não foi incluído na publicação.", schemaPath);
+    await inventoryDb.Database.ExecuteSqlRawAsync(await File.ReadAllTextAsync(schemaPath));
+
     await inventoryDb.Database.ExecuteSqlRawAsync("""
         CREATE TABLE IF NOT EXISTS product_identifiers (
             id SERIAL PRIMARY KEY,
+            organization_id INTEGER NOT NULL DEFAULT 1,
             product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
             market_name VARCHAR(120) NOT NULL,
             code VARCHAR(80) NOT NULL,
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
-        CREATE UNIQUE INDEX IF NOT EXISTS ux_product_identifiers_market_code
-            ON product_identifiers (market_name, code);
+        ALTER TABLE categories ADD COLUMN IF NOT EXISTS organization_id INTEGER;
+        ALTER TABLE products ADD COLUMN IF NOT EXISTS organization_id INTEGER;
+        ALTER TABLE purchases ADD COLUMN IF NOT EXISTS organization_id INTEGER;
+        ALTER TABLE purchase_items ADD COLUMN IF NOT EXISTS organization_id INTEGER;
+        ALTER TABLE stock_movements ADD COLUMN IF NOT EXISTS organization_id INTEGER;
+        ALTER TABLE product_identifiers ADD COLUMN IF NOT EXISTS organization_id INTEGER;
+
+        UPDATE categories SET organization_id = 1 WHERE organization_id IS NULL;
+        UPDATE products SET organization_id = 1 WHERE organization_id IS NULL;
+        UPDATE purchases SET organization_id = 1 WHERE organization_id IS NULL;
+        UPDATE purchase_items SET organization_id = 1 WHERE organization_id IS NULL;
+        UPDATE stock_movements SET organization_id = 1 WHERE organization_id IS NULL;
+        UPDATE product_identifiers SET organization_id = 1 WHERE organization_id IS NULL;
+
+        ALTER TABLE categories ALTER COLUMN organization_id SET NOT NULL;
+        ALTER TABLE products ALTER COLUMN organization_id SET NOT NULL;
+        ALTER TABLE purchases ALTER COLUMN organization_id SET NOT NULL;
+        ALTER TABLE purchase_items ALTER COLUMN organization_id SET NOT NULL;
+        ALTER TABLE stock_movements ALTER COLUMN organization_id SET NOT NULL;
+        ALTER TABLE product_identifiers ALTER COLUMN organization_id SET NOT NULL;
+
+        DO $$ BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_categories_organization') THEN
+                ALTER TABLE categories ADD CONSTRAINT fk_categories_organization FOREIGN KEY (organization_id) REFERENCES auth.organizations(id) ON DELETE RESTRICT;
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_products_organization') THEN
+                ALTER TABLE products ADD CONSTRAINT fk_products_organization FOREIGN KEY (organization_id) REFERENCES auth.organizations(id) ON DELETE RESTRICT;
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_purchases_organization') THEN
+                ALTER TABLE purchases ADD CONSTRAINT fk_purchases_organization FOREIGN KEY (organization_id) REFERENCES auth.organizations(id) ON DELETE RESTRICT;
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_purchase_items_organization') THEN
+                ALTER TABLE purchase_items ADD CONSTRAINT fk_purchase_items_organization FOREIGN KEY (organization_id) REFERENCES auth.organizations(id) ON DELETE RESTRICT;
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_stock_movements_organization') THEN
+                ALTER TABLE stock_movements ADD CONSTRAINT fk_stock_movements_organization FOREIGN KEY (organization_id) REFERENCES auth.organizations(id) ON DELETE RESTRICT;
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_product_identifiers_organization') THEN
+                ALTER TABLE product_identifiers ADD CONSTRAINT fk_product_identifiers_organization FOREIGN KEY (organization_id) REFERENCES auth.organizations(id) ON DELETE RESTRICT;
+            END IF;
+        END $$;
+
+        ALTER TABLE categories DROP CONSTRAINT IF EXISTS categories_name_key;
+        ALTER TABLE products DROP CONSTRAINT IF EXISTS products_sku_key;
+        ALTER TABLE product_identifiers DROP CONSTRAINT IF EXISTS ux_product_identifiers_market_code;
+        DROP INDEX IF EXISTS ux_product_identifiers_market_code;
+        CREATE UNIQUE INDEX IF NOT EXISTS ux_categories_org_name ON categories (organization_id, name);
+        CREATE INDEX IF NOT EXISTS ix_products_organization_sku ON products (organization_id, sku) WHERE sku IS NOT NULL;
+        CREATE UNIQUE INDEX IF NOT EXISTS ux_product_identifiers_org_market_code ON product_identifiers (organization_id, market_name, code);
         CREATE INDEX IF NOT EXISTS ix_product_identifiers_product_id
             ON product_identifiers (product_id);
         """);

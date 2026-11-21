@@ -57,7 +57,7 @@ public class CategoriesController : ControllerBase
         if (string.IsNullOrWhiteSpace(input.Name))
             return BadRequest(new { error = "O nome da categoria é obrigatório." });
 
-        var category = await _context.Categories.FindAsync(id);
+        var category = await _context.Categories.FirstOrDefaultAsync(candidate => candidate.Id == id);
         if (category == null)
             return NotFound(new { error = "Categoria não encontrada." });
 
@@ -79,7 +79,7 @@ public class CategoriesController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteCategory(int id)
     {
-        var category = await _context.Categories.FindAsync(id);
+        var category = await _context.Categories.FirstOrDefaultAsync(candidate => candidate.Id == id);
         if (category == null)
             return NotFound(new { error = "Categoria não encontrada." });
 

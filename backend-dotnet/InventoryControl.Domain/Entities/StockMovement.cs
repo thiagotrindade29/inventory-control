@@ -1,8 +1,11 @@
+using System.Text.Json.Serialization;
+
 namespace InventoryControl.Domain.Entities;
 
 public class StockMovement
 {
     public int Id { get; set; }
+    [JsonIgnore] public int OrganizationId { get; set; }
     public int ProductId { get; set; }
     public Product? Product { get; set; }
 

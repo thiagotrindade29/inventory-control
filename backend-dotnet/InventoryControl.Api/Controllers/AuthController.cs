@@ -57,6 +57,14 @@ public sealed class AuthController : ControllerBase
         if (await _users.Users.AnyAsync())
             return Conflict(new { error = "A configuração inicial já foi concluída." });
 
+        var organization = await _db.Organizations.OrderBy(x => x.Id).FirstOrDefaultAsync();
+        if (organization is null)
+        {
+            organization = new Organization { Name = "Minha organização" };
+            _db.Organizations.Add(organization);
+            await _db.SaveChangesAsync();
+        }
+
         if (!await _roles.RoleExistsAsync(AdminRole))
         {
             var roleResult = await _roles.CreateAsync(new IdentityRole(AdminRole));
@@ -73,6 +81,7 @@ public sealed class AuthController : ControllerBase
             UserName = request.Email.Trim(),
             Email = request.Email.Trim(),
             DisplayName = request.DisplayName.Trim(),
+            OrganizationId = organization.Id,
             EmailConfirmed = true
         };
         var result = await _users.CreateAsync(user, request.Password);
@@ -113,6 +122,7 @@ public sealed class AuthController : ControllerBase
             new(JwtRegisteredClaimNames.Email, user.Email ?? string.Empty),
             new(JwtRegisteredClaimNames.UniqueName, user.DisplayName),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new("organization_id", user.OrganizationId.ToString(System.Globalization.CultureInfo.InvariantCulture)),
             new("sst", user.SecurityStamp ?? string.Empty)
         };
         claims.AddRange((await _users.GetRolesAsync(user)).Select(role => new Claim("role", role)));

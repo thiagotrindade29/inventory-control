@@ -1,0 +1,13 @@
+.git
+.github
+.cert
+.build-check
+node_modules
+dist
+server
+.env
+.env.*
+**/bin
+**/obj
+**/TestResults
+README.md
