@@ -64,9 +64,9 @@ export default function AuthView({ setupRequired, onAuthenticated }) {
 
             <form className="auth-form" onSubmit={submit}>
               {isSetup && <>
-                <label>Chave de configuração (valor copiado)
-                  <input autoComplete="off" required minLength={32} maxLength={128} placeholder="Cole somente a chave, não o comando" value={form.bootstrapKey} onChange={(e) => update('bootstrapKey', e.target.value)} />
-                  <small>Execute o comando no PowerShell para copiar a chave. Depois, volte aqui e cole apenas o valor copiado. Usada uma vez.</small>
+                <label>Chave de configuração (Auth__BootstrapKey)
+                  <input type="password" autoComplete="off" required minLength={32} maxLength={128} placeholder="Cole a chave configurada no Render" value={form.bootstrapKey} onChange={(e) => update('bootstrapKey', e.target.value)} />
+                  <small>Informe exatamente o valor da variável Auth__BootstrapKey no Web Service da API. A chave de User Secrets local é diferente. Usada uma vez para criar o primeiro administrador.</small>
                 </label>
                 <label>Seu nome
                   <input autoComplete="name" required minLength={2} maxLength={120} value={form.displayName} onChange={(e) => update('displayName', e.target.value)} />
